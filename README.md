@@ -1,5 +1,5 @@
 # MCU
-What the hell is this?
+The microcontroller unit is the brain of the Pan-Tilt system and facilitates a CLI interface to the system as-well as controls the attached hardware using a Joystick, through the means of a closed-loop feedback mechanism.
 
 #### Table of Contents
 - [System Architecture](#system-architecture)
@@ -10,9 +10,17 @@ What the hell is this?
 ---
 
 # System Architecture
-Description of architecture text here please.
+The MCU connects to a CLI using serial connection, enabling users to interact with the system. Control of the Pan-Tilt system is achieved using a Joystick connected to the MCU, where data-transfer including motor PWM and encoder data is facilitated by parallel connections to an FPGA using multiple SPI modules.
 
 ![System Arhictecture](https://i.imgur.com/tqUFwMv.jpg)
+
+## Communication Protocols
+
+### UART
+Serial communication is performed at `9600 baud` using a total of 10-bits, with no parity check. A telegram is comprised of `3 bytes`, following the frame format as shown below.
+
+### SPI
+Text.
 
 ## Modules
 The MCU has is comprised of various modules, each with a specific purpose.
@@ -32,7 +40,11 @@ The MCU has is comprised of various modules, each with a specific purpose.
 | PID        	| `pid.h`     	| PID computation class.                                           	|
 
 ## System Process
-A little information about the process would be nice.
+The main process consists of two primary stages; CLI communication followed by a FSM which determines who to control the attached hardware.
+
+![System Process](https://i.imgur.com/b2NlyPA.jpg)
+
+In more detail, the process can be structured as:
 
 ```
 SYSTEM PROCESS
