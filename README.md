@@ -3,11 +3,12 @@ The microcontroller unit is the brain of the Pan-Tilt system and facilitates a C
 
 #### Table of Contents
 - [System Architecture](#system-architecture)
+  * [Modules](#modules)
   * [Communication Protocols](#communication-protocols)
     + [UART](#uart)
     + [SPI](#spi)
-  * [Modules](#modules)
   * [System Process](#system-process)
+- [Coding Conventions](#coding-conventions)
 
 ---
 
@@ -15,14 +16,6 @@ The microcontroller unit is the brain of the Pan-Tilt system and facilitates a C
 The MCU connects to a CLI using serial connection, enabling users to interact with the system. Control of the Pan-Tilt system is achieved using a Joystick connected to the MCU, where data-transfer including motor PWM and encoder data is facilitated by parallel connections to an FPGA using multiple SPI modules.
 
 ![System Arhictecture](https://i.imgur.com/tqUFwMv.jpg)
-
-## Communication Protocols
-
-### UART
-Serial communication is performed at `9600 baud` using a total of 10-bits, with no parity check. A telegram is comprised of `3 bytes`, following the frame format as shown below.
-
-### SPI
-Text.
 
 ## Modules
 The MCU has is comprised of various modules, each with a specific purpose.
@@ -40,6 +33,14 @@ The MCU has is comprised of various modules, each with a specific purpose.
 | JOYSTICK   	| `joystk.h`  	| Joystick driver with kinematic mapping.                          	|
 | MOTOR      	| `dcmotor.h` 	| DC Motor interface with encoder, PWM etc.                        	|
 | PID        	| `pid.h`     	| PID computation class.                                           	|
+
+## Communication Protocols
+
+### UART
+Serial communication is performed at `9600 baud` using a total of 10-bits, with no parity check. A telegram is comprised of `3 bytes`, following the frame format as shown below.
+
+### SPI
+Text.
 
 ## System Process
 The main process consists of two primary stages; CLI communication followed by a FSM which determines who to control the attached hardware.
