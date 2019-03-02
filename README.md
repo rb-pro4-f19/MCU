@@ -1,7 +1,13 @@
 # MCU
 What the hell is this?
 
-TOC
+#### Table of Contents
+- [System Architecture](#system-architecture)
+  * [Modules](#modules)
+  * [System Process](#system-process)
+- [Coding Conventions](#coding-conventions)
+
+---
 
 # System Architecture
 Description of architecture text here please.
