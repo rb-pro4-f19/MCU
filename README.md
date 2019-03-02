@@ -3,9 +3,11 @@ The microcontroller unit is the brain of the Pan-Tilt system and facilitates a C
 
 #### Table of Contents
 - [System Architecture](#system-architecture)
+  * [Communication Protocols](#communication-protocols)
+    + [UART](#uart)
+    + [SPI](#spi)
   * [Modules](#modules)
   * [System Process](#system-process)
-- [Coding Conventions](#coding-conventions)
 
 ---
 
@@ -42,37 +44,9 @@ The MCU has is comprised of various modules, each with a specific purpose.
 ## System Process
 The main process consists of two primary stages; CLI communication followed by a FSM which determines who to control the attached hardware.
 
-![System Process](https://i.imgur.com/b2NlyPA.jpg)
+![System Process](https://i.imgur.com/iiY7sYH.jpg)
 
-In more detail, the process can be structured as:
-
-```
-SYSTEM PROCESS
-|
-├── Check CLI commands
-|   ├── Read UART
-|   ├── Interpret command
-|   └── Update STATE & FPGA_CTRL
-|
-├── Controller (STATE)
-|   ├── MODE_CAL
-|   |   └── ...
-|   ├── MODE_RUN
-|   |   ├── Read from joystick
-|   |   ├── Update desired position (ref)
-|   |   ├── Read from encoders
-|   |   ├── Compute feedback (error)
-|   |   ├── Compute control variable
-|   |   ├── Compute output (PWM)
-|   |   ├── Write to motors [dcmot.set_pwm(M1, val);]
-|   |   ├── Save data for next iteration
-|   |   └── Log to CLI (optional)
-|   ├── MODE_RST
-|   └── ...
-|
-├── System Timepoint (ISR)*
-└── Exception Handler*
-```
+---
 
 # Coding Conventions
 This project use the following coding conventions for `C99`:
@@ -97,7 +71,7 @@ Commits should be staged by relevant grouping of files, where commits should as 
 ![GitHub Commit Example](https://i.imgur.com/IAO0n1E.gif)
 
 ## Modules
-Each module, defined as a set of `.h` and `.c` files, must follow the predefined structure, as demonstrated in `template.h` and `template.c`.
+Each module, defined as a set of `.h` and `.c` files, must follow the predefined structure, as demonstrated in [`template.h`](https://github.com/martinandrovich/emp-blinker/blob/master/src/template_h.txt) and [`template.c`](https://github.com/martinandrovich/emp-blinker/blob/master/src/template_c.txt).
 
 #### Module Header
 Both files of a module must be described using a module header at the beginning of the document, following the format as defined in the template files.
@@ -110,8 +84,6 @@ All function definitions must be desrbibed using a header (after function name a
 
 #### Includes
 Each header-file of a module should include the `#pragma once` include guard. It is illegal to include `.c` files directly.
-
-If possible, all includes shou
 
 #### Module Interface
 A module (or class) must bear the same name as the `class struct` of that module, although the `class TYPE` should be more descriptive. Non-static modules must have a contructor named `new()` and a destructor named `del()`.
