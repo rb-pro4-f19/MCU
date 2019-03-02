@@ -15,23 +15,24 @@ Description of architecture text here please.
 [img_placeholder]
 
 ## Modules
+The MCU has is comprised of various modules, each with a specific purpose.
 
-```
-MODULES
-|
-├── SYS/DRIVER  (driver.h)
-├── TIMEPOINT   (tp.h)
-├── EXCHDLR     (exchdlr.h)
-├── UART        (uart.h)
-├── SPI         (spi.h)
-├── LOG         (log.h)
-|
-├── JOYSTICK    (joystk.h)
-├── MOTOR       (dcmot.h)
-└── PID         (pid.h)
-```
+| Name       	| File        	| Description                                                      	|
+|------------	|-------------	|------------------------------------------------------------------	|
+| SYS/DRIVER 	| `driver.h`  	| MCU port access, interrupts, systick etc.                        	|
+| FPGA       	| `fpga.h`    	| 32-bit FPGA control line.                                        	|
+| EXCHDLR    	| `exchdlr.h` 	| Exception handling with `assert()` & `require()` methods.        	|
+| TIMEPOINT  	| `tp.h`      	| Time tracking, duration calculation etc.                         	|
+| UART       	| `uart.h`    	| UART communication with telegram protocol.                       	|
+| SPI        	| `spi.h`     	| SPI communcation with telegram protocol.                         	|
+| CLI        	| `cli.h`     	| Command interpretation, console logging.                         	|
+| CONTROLLER 	| `ctrl.h`    	| Controller data struct with previous data, desired position etc. 	|
+| JOYSTICK   	| `joystk.h`  	| Joystick driver with kinematic mapping.                          	|
+| MOTOR      	| `dcmotor.h` 	| DC Motor interface with encoder, PWM etc.                        	|
+| PID        	| `pid.h`     	| PID computation class.                                           	|
 
 ## System Process
+A little information about the process would be nice.
 
 ```
 SYSTEM PROCESS
@@ -39,20 +40,21 @@ SYSTEM PROCESS
 ├── Check CLI commands
 |   ├── Read UART
 |   ├── Interpret command
-|   └── Change STATE if necessary
+|   └── Update STATE & FPGA_CTRL
 |
 ├── Controller (STATE)
 |   ├── MODE_CAL
 |   |   └── ...
 |   ├── MODE_RUN
-|   |   ├── Read JOYSTICK
-|   |   ├── Update desired position [dcmot.set_pos(x, y);]
-|   |   ├── Read E1 & E2 [dcmot.read_enc(E1);]
-|   |   ├── Compute feedback control (error)
+|   |   ├── Read from joystick
+|   |   ├── Update desired position (ref)
+|   |   ├── Read from encoders
+|   |   ├── Compute feedback (error)
 |   |   ├── Compute control variable
-|   |   ├── Write M1 & M2 [dcmot.set_pwm(M1, val);]
-|   |   ├── Write CLI (optional)
-|   |   └── Save data for next iteration
+|   |   ├── Compute output (PWM)
+|   |   ├── Write to motors [dcmot.set_pwm(M1, val);]
+|   |   ├── Save data for next iteration
+|   |   └── Log to CLI (optional)
 |   ├── MODE_RST
 |   └── ...
 |
