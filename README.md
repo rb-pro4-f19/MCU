@@ -12,7 +12,7 @@ What the hell is this?
 # System Architecture
 Description of architecture text here please.
 
-[img_placeholder]
+![System Arhictecture](https://i.imgur.com/PWtLYKd.png)
 
 ## Modules
 The MCU has is comprised of various modules, each with a specific purpose.
