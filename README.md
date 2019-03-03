@@ -27,7 +27,7 @@ The MCU has is comprised of various modules, each with a specific purpose.
 | EXCHDLR    	| `exchdlr.h` 	| Exception handling with `assert()` & `require()` methods.        	|
 | TIMEPOINT  	| `tp.h`      	| Time tracking, duration calculation etc.                         	|
 | UART       	| `uart.h`    	| UART communication with telegram protocol.                       	|
-| SPI        	| `spi.h`     	| SPI communcation with telegram protocol.                         	|
+| SPI        	| `spi.h`     	| SPI communication with telegram protocol.                         	|
 | CLI        	| `cli.h`     	| Command interpretation, console logging.                         	|
 | CONTROLLER 	| `ctrl.h`    	| Controller data struct with previous data, desired position etc. 	|
 | JOYSTICK   	| `joystk.h`  	| Joystick driver with kinematic mapping.                          	|
@@ -43,7 +43,7 @@ Serial communication is performed at `9600 baud` using a total of 10-bits, with 
 Text.
 
 ## System Process
-The main process consists of two primary stages; CLI communication followed by a FSM which determines who to control the attached hardware.
+The main process  consists of two primary stages; CLI communication followed by a FSM which determines who to control the attached hardware.
 
 ![System Process](https://i.imgur.com/iiY7sYH.jpg)
 
@@ -75,19 +75,19 @@ Commits should be staged by relevant grouping of files, where commits should as 
 Each module, defined as a set of `.h` and `.c` files, must follow the predefined structure, as demonstrated in [`template.h`](https://github.com/martinandrovich/emp-blinker/blob/master/src/template_h.txt) and [`template.c`](https://github.com/martinandrovich/emp-blinker/blob/master/src/template_c.txt).
 
 #### Module Header
-Both files of a module must be described using a module header at the beginning of the document, following the format as defined in the template files.
+Both files of a module should be described using a module header at the beginning of the document, following the format as defined in the template files.
 
 #### Sections
-Each module must be comrpised of the predefined sections, even if unused. If necessary, sections may be added.
+Each module should be comprised of the predefined sections, even if unused. If necessary, sections may be added.
 
 #### Function Header
-All function definitions must be desrbibed using a header (after function name and before curly braces), following the format as defined in the template file. This only affects `.c` files, since header files should never include any function declarations.
+All function definitions should be described using a header (after function name and before curly braces), following the format as defined in the template file. This only affects `.c` files, since header files should never include any function declarations.
 
 #### Includes
 Each header-file of a module should include the `#pragma once` include guard. It is illegal to include `.c` files directly.
 
 #### Module Interface
-A module (or class) must bear the same name as the `class struct` of that module, although the `class TYPE` should be more descriptive. Non-static modules must have a contructor named `new()` and a destructor named `del()`.
+A module (or class) must bear the same name as the `class struct` of that module, although the `class TYPE` should be more descriptive. Non-static modules must have a constructor named `new()` and a destructor named `del()`.
 
 Struct modules should be comprised of:
 - Struct Declarations (forward declaration)
@@ -143,7 +143,7 @@ const struct DEMO_CLASS demo =
 All code, including comments, should be written in _American-English_. Inline code comments are always lowercase, where descriptive text in e.g. headers is sentence case.
 
 #### Indentation
-For identation, tabs of size 4 should be used, indenting each block as defined per a set of curly braces; these must always start on a new line. In some cases, indentation may be used with paranthetes, as demonstrated below:
+For indentation, tabs of size 4 should be used, indenting each block as defined per a set of curly braces; these must always start on a new line. In some cases, indentation may be used with parentheses, as demonstrated below:
 
 Combination of declarations should _preferably_ be aligned using tabs.
 
@@ -171,16 +171,16 @@ Per default, code should be written using the following conventions:
 
 - Single prefixed underscores are reserved for private methods and variables of structs.
 - Double prefixed underscores are reserved for ASSEMBLY methods.
-- Numberical values should be defined as constants with meaningful names.
-- Variables that are desired to be left unchange must be marked `const`.
-- Variables that are susceptable unexpected changed must be marked `volatile`.
+- Numerical values should be defined as constants with meaningful names.
+- Variables that are desired to be left unchanged must be marked `const`.
+- Variables that are susceptible to unexpected changed must be marked `volatile`.
 - Methods that take no arguments must be explicitly specified, e.g. `void some_method(void);`.
 - The keyword `this` is reserved for method taking a pointer to the object as an argument.
 - Bitfields are encouraged in structs if applicable.
 - Arithmetic operations are always to be separated by spaces, e.g. `c = a * (b / 4);`.
 
 #### Cases
-In all cases, the use of (early) `return`, `continue` and `break` **is allowed**; altbeit `GOTO` is disallowed.
+In all cases, the use of (early) `return`, `continue` and `break` **is allowed**; albeit `GOTO` is disallowed.
 
 ##### While
 
