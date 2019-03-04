@@ -22,7 +22,7 @@ This project uses the [`RB-C99-1`][2] coding conventions.
 ## System Architecture
 The MCU connects to a CLI using serial connection, enabling users to interact with the system. Control of the Pan-Tilt system is achieved using a joystick connected to the MCU, where communication (motor PWM and encoder data) is facilitated by parallel connections to an FPGA with multiple SPI modules.
 
-![System Arhictecture](https://i.imgur.com/tqUFwMv.jpg)
+![System Arhictecture](https://github.com/rb-pro4-f19/Overleaf/blob/master/assets/img/system_architecture.jpg)
 
 The system is implemented using a super-loop structure, using various [modules](#modules) and a central [system process](#system-process).
 
@@ -46,7 +46,7 @@ The MCU has is comprised of various modules, each with a specific purpose.
 ## System Process
 The main super-loop process  consists of two primary stages; CLI communication followed by a FSM which in accordance with the selected [system mode](#modes), determines how to regulate the attached Pan-Tilt hardware.
 
-![System Process](https://i.imgur.com/iiY7sYH.jpg)
+![System Process](https://github.com/rb-pro4-f19/Overleaf/blob/master/assets/img/mcu_architecture.jpg)
 
 ## Modes
 Text.
