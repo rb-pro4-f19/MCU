@@ -1,10 +1,10 @@
 # MCU
-The microcontroller unit is the brain of the [Pan-Tilt system][2] and facilitates a CLI interface to the system as-well as controls the attached hardware using a joystick, through the means of a closed-loop feedback mechanism.
+The microcontroller unit is the brain of the [Pan-Tilt system][1] and facilitates a CLI interface to the system as-well as controls the attached hardware using a joystick, through the means of a closed-loop feedback mechanism.
 
-This project uses the [`RB-C99-1`][1] coding conventions.
+This project uses the [`RB-C99-1`][2] coding conventions.
 
-[1]: https://github.com/rb-pro4-f19/rb-pro4-f19.github.io/blob/master/docs/STANDARDS.md
-[2]: https://google.com
+[1]: #mcu
+[2]: https://github.com/rb-pro4-f19/rb-pro4-f19.github.io/blob/master/docs/STANDARDS.md
 
 ---
 
@@ -15,7 +15,7 @@ This project uses the [`RB-C99-1`][1] coding conventions.
 - [Communication Protocols](#communication-protocols)
 	- [UART](#uart)
 	- [SPI](#spi)
-- [Coding Conventions][1]
+- [Coding Conventions][2]
 
 ---
 
