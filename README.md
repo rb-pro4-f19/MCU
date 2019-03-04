@@ -1,10 +1,10 @@
 # MCU
 The microcontroller unit is the brain of the [Pan-Tilt system][1] and facilitates a CLI interface to the system as-well as controls the attached hardware using a joystick, through the means of a closed-loop feedback mechanism.
 
-This project uses the [`RB-C99-1`][2] coding conventions.
+This project uses the [`RB-C99 1.0`][2] coding conventions.
 
 [1]: #mcu
-[2]: https://github.com/rb-pro4-f19/rb-pro4-f19.github.io/blob/master/docs/STANDARDS.md
+[2]: https://github.com/rb-pro4-f19/rb-pro4-f19.github.io/blob/master/docs/RB-C99/rb_c99_1.0.md
 
 ---
 
@@ -54,11 +54,11 @@ Text.
 ## Communication Protocols
 
 ### UART
-Serial communication is performed at `9600 baud` with `10-bit` (total) frame-size, with no parity check. A telegram is comprised of `3 bytes`, following the frame format as shown below.
+Serial communication is performed at `9600 baud` with `10-bit` (total) frame-size, with no parity check. A telegram is comprised of `3 bytes`, following the frame format as shown below (WIP).
 
 [Image of UART Frame]
 
-The system is interfaced using [these commands](https://google.com).
+The system is interfaced using [these commands](#uart) (WIP).
 
 ### SPI
 Text.
