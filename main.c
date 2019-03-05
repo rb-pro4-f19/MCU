@@ -1,9 +1,8 @@
-#include "modules/spi.h"
+//#include "spi.h"
+#include "tp.h"
+
 int main(void)
 {
-	SPI* test = spi.new(10,10);
-	SPI* test1 = spi.new(10,10);
-	SPI_FRAME frame_test = {3,17,2};
-	frame_test.addr;
-
+	//SPI* test = spi.new(10, 10);
+	return 0;
 }
