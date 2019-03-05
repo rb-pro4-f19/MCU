@@ -22,8 +22,10 @@
 
 /*****************************    Defines    *******************************/
 
-typedef struct  EXAMPLE EXAMPLE;
-typedef enum    EXM_TYPE EXM_TYPE;
+typedef struct  SPI SPI;
+typedef struct	SPI_FRAME SPI_FRAME;
+typedef enum    SPI_ADDR SPI_ADDR;
+typedef enum    SPI_FRMPART SPI_FRMPART;
 
 /***********************     External Variables     ************************/
 
@@ -33,32 +35,49 @@ typedef enum    EXM_TYPE EXM_TYPE;
 
 /*************************    Class Functions    ***************************/
 
-extern const struct EXAMPLE_CLASS
+extern const struct SPI_CLASS
 {
-	EXAMPLE*	(*new)(EXM_TYPE type, int32_t init_val);
-	void		(*del)(EXAMPLE* this);
+	SPI*		(*new)(int16_t baudrate, int16_t timeout_ms);
+	void		(*del)(SPI* this);
 
-	void 		(*some_func)(EXAMPLE* this);
-} exm;
+	void 		(*send)(SPI* this,int8_t data, SPI_ADDR addr, bool ack);
+	int16_t		(*request)(SPI* this, int32_t timeout_ms);
+} spi;
 
 /*****************************    Constructs   *****************************/
 
-enum EXM_TYPE
+enum SPI_ADDR
 {
-	NORMAL,
-	SYSTEM
+	CTRL = 0x00,
+	MOT1,
+	MOT2,
+	ENC1,
+	ENC2,
+	HAL1,
+	HAL2,
+	CUR1,
+	CUR2
 };
 
-struct EXAMPLE
+enum SPI_FRMPART
+{
+	ADDR,
+	DATA,
+	CHKSUM
+};
+
+struct SPI_FRAME
+{
+	int8_t addr : 4;
+	int8_t data : 8;
+	int8_t chksum : 4;
+};
+
+struct SPI
 {
 	// public
-	uint64_t	var;
-	uint64_t	array[EXM_ARRAY_SIZE];
-	bool		is_set;
-	EXM_TYPE	type;
-
-	// private
-	int32_t		_secret;
+	int16_t		baudrate;
+	int32_t		timeout_ms;
 };
 
 /****************************** End Of Module ******************************/

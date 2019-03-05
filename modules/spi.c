@@ -16,7 +16,7 @@
 #include <stdbool.h>
 #include <malloc.h>
 
-#include "exm.h"
+#include "spi.h"
 
 /*****************************    Defines    *******************************/
 
@@ -28,26 +28,31 @@ static int32_t		_global_var = 0;
 
 /************************  Function Declarations ***************************/
 
-static EXAMPLE*		EXAMPLE_new(EXM_TYPE type, int32_t init_val);
-static void 		EXAMPLE_del(EXAMPLE* this);
+static SPI*			SPI_new(int16_t baudrate, int16_t timeout_ms);
+static void 		SPI_del(SPI* this);
 
-static void 		EXAMPLE_some_func(EXAMPLE* this);
+static void 		SPI_send(SPI* this, int8_t data, SPI_ADDR addr, bool ack);
+static int16_t 		SPI_request(SPI* this, int32_t timeout_ms);
 
-static int32_t 		_EXAMPLE_private_func(void);
+static void 		_SPI_transmit(SPI_FRAME* frame);
+static SPI_FRAME	_SPI_recieve();
+static int8_t		_SPI_checksum_generate(SPI_FRAME* frame);
+static bool			_SPI_checksum_validate(SPI_FRAME* frame);
 
 /****************************   Class Struct   *****************************/
 
-const struct EXAMPLE_CLASS exm =
+const struct SPI_CLASS spi =
 {
-	.new			= &EXAMPLE_new,
-	.del			= &EXAMPLE_del,
+	.new			= &SPI_new,
+	.del			= &SPI_del,
 
-	.some_func		= &EXAMPLE_some_func
+	.send			= &SPI_send,
+	.request		= &SPI_request
 };
 
 /***********************   Constructive Functions   ************************/
 
-static EXAMPLE* EXAMPLE_new(EXM_TYPE type, int32_t init_val)
+static SPI* SPI_new(int16_t baudrate, int16_t timeout_ms)
 /****************************************************************************
 *   Input    : type = desired EXM_TYPE for the instance.
 			 : init_val = desired value for `var`.
@@ -56,24 +61,17 @@ static EXAMPLE* EXAMPLE_new(EXM_TYPE type, int32_t init_val)
 ****************************************************************************/
 {
 	// allocate memory
-	EXAMPLE* this = malloc(sizeof(EXAMPLE));
+	SPI* this = malloc(sizeof(SPI));
 
 	// initialize variables
-	this->var 		= init_val;
-	this->_secret	= 0;
-	this->is_set 	= false;
-
-	// initialize array
-	for (int i = 0; i < EXM_ARRAY_SIZE; i++)
-	{
-		this->array[i] = 0;
-	}
-
+	this->baudrate 		= init_val;
+	this->timeout_ms	= 0;
+	_SPI_checksum_generate(&((SPI_FRAME){10, 10, 0}))
 	// return pointer to instance
 	return this;
 }
 
-static void EXAMPLE_del(EXAMPLE* this)
+static void SPI_del(SPI* this)
 /****************************************************************************
 *   Input    : this = pointer to a EXAMPLE instance.
 *   Function : Destructor of a EXAMPLE instance.
@@ -84,14 +82,16 @@ static void EXAMPLE_del(EXAMPLE* this)
 
 /*****************************   Functions   *******************************/
 
-static void EXAMPLE_some_func(EXAMPLE* this)
+static void SPI_send(SPI* this, int8_t data, SPI_ADDR addr, bool ack)
 /****************************************************************************
 *   Input    : this = pointer to a EXAMPLE instance.
 *   Function : Sets `is_set` of an EXAMPLE instance to false, such that
 			   something interesting may happen. Maybe.
 ****************************************************************************/
 {
-	this->is_set = false;
+	SPI_FRAME frame= {addr, data, 0};
+	frame.chksum = _SPI_checksum_generate(&frame);
+	_SPI_transmit(&frame);// skal skrives
 }
 
 static int32_t _EXAMPLE_private_func(void)
