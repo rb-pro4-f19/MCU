@@ -37,7 +37,7 @@ static uint32_t		_global_var = 0;
 static SPI*			SPI_new(uint8_t clkdiv, uint16_t timeout_ms);
 static void 		SPI_del(SPI* this);
 
-static void 		SPI_send(SPI* this, uint8_t data, SPI_ADDR addr, bool ack);
+static void 		SPI_send(SPI* this, SPI_ADDR addr, uint8_t data, bool ack);
 static uint16_t 	SPI_request(SPI* this, SPI_ADDR addr, uint8_t size, uint32_t timeout_ms);
 
 static void 		_SPI_init(uint8_t clkdiv);
@@ -92,7 +92,7 @@ static void SPI_del(SPI* this)
 /*****************************   Functions   *******************************/
 
 
-static void SPI_send(SPI* this, uint8_t data, SPI_ADDR addr, bool ack)
+static void SPI_send(SPI* this, SPI_ADDR addr, uint8_t data, bool ack)
 /****************************************************************************
 *   Input    : this = pointer to a EXAMPLE instance.
 *   Function : Sets `is_set` of an EXAMPLE instance to false, such that

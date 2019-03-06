@@ -3,7 +3,7 @@
 * RB-PRO4 F19
 *
 * FILENAME...:	spi.h
-* MODULENAME.:	EXAMPLE
+* MODULENAME.:	SPI
 * API........:	github.com/rb-pro4-f19/MCU/blob/master/README.md
 *
 * DESCRIPTION:	An example module. This might have a lengthy description, in
@@ -39,11 +39,11 @@ typedef enum    SPI_FRMPART SPI_FRMPART;
 
 extern const struct SPI_CLASS
 {
-	SPI*		(*new)(int16_t baudrate, int16_t timeout_ms);
+	SPI*		(*new)(uint8_t clkdiv, uint16_t timeout_ms);
 	void		(*del)(SPI* this);
 
-	void 		(*send)(SPI* this, int8_t data, SPI_ADDR addr, bool ack);
-	uint16_t		(*request)(SPI* this, SPI_ADDR addr, int8_t size, int32_t timeout_ms);
+	void 		(*send)(SPI* this, SPI_ADDR addr, uint8_t data, bool ack);
+	uint16_t	(*request)(SPI* this, SPI_ADDR addr, uint8_t size, uint32_t timeout_ms);
 } spi;
 
 /*****************************    Constructs   *****************************/
