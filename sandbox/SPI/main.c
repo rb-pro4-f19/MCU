@@ -5,8 +5,10 @@
 
 int main(void)
 {
-	SPI* test = spi.new(9600, 500);
-	
+	//SPI* test = spi.new(2, 500);
+	SPI_FRAME frm = { 0b0001, 0b00000011, 0b1001 };
+	SPI_FRAME* frame = &frm;
+	printf("output: 0x%x", (frame->addr << 12) | (frame->data << 4) | (frame->chksum << 0));
 	// stall input
 	getchar();
 

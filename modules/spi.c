@@ -2,8 +2,8 @@
 * University of Southern Denmark
 * RB-PRO4 F19
 *
-* FILENAME...:	exm.c
-* MODULENAME.:	EXAMPLE
+* FILENAME...:	spi.c
+* MODULENAME.:	SPI
 *
 * For an API and DESCRIPTION, please refer to the  module
 * specification file (.h-file).
@@ -21,23 +21,29 @@
 /*****************************    Defines    *******************************/
 
 /*****************************   Constants   *******************************/
-
+#define SYSCLK 16000000
+#define SSI_CR0_DSS_16 0xF
+#define SSI0_CR0_SCR 8
+#define SSI0_CR0_SPH 7
+#define SSI0_CR0_SPO 6
+#define SSI0_CR0_FRF 4
+#define SSI0_CR0_DSS 0
 /*****************************   Variables   *******************************/
 
-static int32_t		_global_var = 0;
+static uint32_t		_global_var = 0;
 
 /************************  Function Declarations ***************************/
 
-static SPI*			SPI_new(int16_t baudrate, int16_t timeout_ms);
+static SPI*			SPI_new(uint8_t clkdiv, uint16_t timeout_ms);
 static void 		SPI_del(SPI* this);
 
-static void 		SPI_send(SPI* this, int8_t data, SPI_ADDR addr, bool ack);
-static int16_t 		SPI_request(SPI* this, SPI_ADDR addr, int8_t size, int32_t timeout_ms);
+static void 		SPI_send(SPI* this, uint8_t data, SPI_ADDR addr, bool ack);
+static uint16_t 	SPI_request(SPI* this, SPI_ADDR addr, uint8_t size, uint32_t timeout_ms);
 
-static void 		_SPI_init(void);
+static void 		_SPI_init(uint8_t clkdiv);
 static void 		_SPI_transmit(SPI_FRAME* frame);
-static SPI_FRAME	_SPI_recieve();
-static int8_t		_SPI_checksum_generate(SPI_FRAME* frame);
+static SPI_FRAME	_SPI_recieve(void);
+static uint8_t		_SPI_checksum_generate(SPI_FRAME* frame);
 static bool			_SPI_checksum_validate(SPI_FRAME* frame);
 
 /****************************   Class Struct   *****************************/
@@ -53,7 +59,7 @@ const struct SPI_CLASS spi =
 
 /***********************   Constructive Functions   ************************/
 
-static SPI* SPI_new(int16_t baudrate, int16_t timeout_ms)
+static SPI* SPI_new(uint8_t clkdiv, uint16_t timeout_ms)
 /****************************************************************************
 *   Input    : type = desired EXM_TYPE for the instance.
 			 : init_val = desired value for `var`.
@@ -65,9 +71,11 @@ static SPI* SPI_new(int16_t baudrate, int16_t timeout_ms)
 	SPI* this = malloc(sizeof(SPI));
 
 	// initialize variables
-	this->baudrate 		= init_val;
+	this->clkdiv 		= clkdiv;
 	this->timeout_ms	= 0;
-	_SPI_checksum_generate(&((SPI_FRAME){10, 10, 0}))
+	_SPI_init(clkdiv);
+	_SPI_checksum_generate(&((SPI_FRAME){10, 10, 0}));
+
 	// return pointer to instance
 	return this;
 }
@@ -83,7 +91,8 @@ static void SPI_del(SPI* this)
 
 /*****************************   Functions   *******************************/
 
-static void SPI_send(SPI* this, int8_t data, SPI_ADDR addr, bool ack)
+
+static void SPI_send(SPI* this, uint8_t data, SPI_ADDR addr, bool ack)
 /****************************************************************************
 *   Input    : this = pointer to a EXAMPLE instance.
 *   Function : Sets `is_set` of an EXAMPLE instance to false, such that
@@ -95,13 +104,52 @@ static void SPI_send(SPI* this, int8_t data, SPI_ADDR addr, bool ack)
 	_SPI_transmit(&frame);// skal skrives
 }
 
-static int32_t _EXAMPLE_private_func(void)
+static void _SPI_init(uint8_t clkdiv)
 /****************************************************************************
-*   Function : Some arithmetic expression.
+*   Input    : this = pointer to a EXAMPLE instance.
+*   Function : Sets `is_set` of an EXAMPLE instance to false, such that
+			   something interesting may happen. Maybe.
+****************************************************************************/
+{			// SSI0clk PA2, SSIoFSS PA3, SSI0Rx PA4, SSI0TX PA5;
+
+	SYSCTL_RCGCSSI_R |= SYSCTL_RCGCSSI_R0; // enables SSI module 0
+	SYSCTL_RCGCGPIO_R |=  (1<<0); 			// Enable and provide a clock to GPIO Port A in Run mode.
+	GPIO_PORTA_AFSEL_R |= (1<<2)|(1<<3)|(1<<4)|(1<<5);	// PortA PA'x' controlled by peripheral signals
+	GPIO_PORTA_PCTL_R |= (2<<8)|(2<<12)|(2<<16)|(2<<20); // Config portmux control to SSI module 0
+	GPIO_PORTA_DEN_R |= (1<<2)|(1<<3)|(1<<4)|(1<<5);
+
+	SSI0_CR1_R &= ~(1<<1);		// disable SPI0
+	SSI0_CR1_R = 0x00000000;		// SPi Master
+	SSI0_CC_R |= 0x0;			// clk source ->sysclk;
+	SSI0_CPSR_R = clkdiv;		// sysclk/ clkdiv
+
+	SSI0_CR0_R = (0<<SSI0_CR0_SCR) | (0<<SSI0_CR0_SPH) | (0<<SSI0_CR0_SPO) | (SSI_CR0_DSS_16<<SSI0_CR0_DSS);
+
+	SSI0_CR1_R |= (1<<1);		// Enable SPI0
+}
+static void _SPI_transmit(SPI_FRAME* frame)
+/****************************************************************************
+*	Input    : frame sending
+*   Function :
 ****************************************************************************/
 {
-	int32_t temp = 20 * ((7 + 4) / (-5));
-	return temp;
+		SSI0_DR_R = (frame->addr<<12) | (frame->data<<4) |(frame->chksum<<0);
+	while(SSI0_SR_R & (1<<0) == 0);
 }
-
+static uint16_t SPI_request(SPI * this, SPI_ADDR addr, uint8_t size, uint32_t timeout_ms)
+{
+	return 0;
+}
+static SPI_FRAME _SPI_recieve(void)
+{
+	return (SPI_FRAME){ 0,0,0 };
+}
+static uint8_t _SPI_checksum_generate(SPI_FRAME * frame)
+{
+	return 0;
+}
+static bool _SPI_checksum_validate(SPI_FRAME * frame)
+{
+	return false;
+}
 /****************************** End Of Module ******************************/

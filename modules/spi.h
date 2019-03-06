@@ -34,6 +34,7 @@ typedef enum    SPI_FRMPART SPI_FRMPART;
 
 #define	EXM_ARRAY_SIZE 8
 
+
 /*************************    Class Functions    ***************************/
 
 extern const struct SPI_CLASS
@@ -42,7 +43,7 @@ extern const struct SPI_CLASS
 	void		(*del)(SPI* this);
 
 	void 		(*send)(SPI* this, int8_t data, SPI_ADDR addr, bool ack);
-	int16_t		(*request)(SPI* this, SPI_ADDR addr, int8_t size, int32_t timeout_ms);
+	uint16_t		(*request)(SPI* this, SPI_ADDR addr, int8_t size, int32_t timeout_ms);
 } spi;
 
 /*****************************    Constructs   *****************************/
@@ -69,16 +70,16 @@ enum SPI_FRMPART
 
 struct SPI_FRAME
 {
-	int8_t addr : 4;
-	int8_t data : 8;
-	int8_t chksum : 4;
+	uint8_t addr : 4;
+	uint8_t data : 8;
+	uint8_t chksum : 4;
 };
 
 struct SPI
 {
 	// public
-	int16_t		baudrate;
-	int32_t		timeout_ms;
+	uint8_t		clkdiv;
+	uint32_t		timeout_ms;
 };
 
 /****************************** End Of Module ******************************/
