@@ -8,7 +8,7 @@
 * For an API and DESCRIPTION, please refer to the  module
 * specification file (.h-file).
 *
-****************************************************************************
+****************************************************************************/
 
 /***************************** Include files *******************************/
 
@@ -29,8 +29,6 @@
 #define SSI0_CR0_FRF 4
 #define SSI0_CR0_DSS 0
 /*****************************   Variables   *******************************/
-
-static uint32_t		_global_var = 0;
 
 /************************  Function Declarations ***************************/
 
@@ -134,7 +132,7 @@ static void _SPI_transmit(SPI_FRAME* frame)
 ****************************************************************************/
 {
 		SSI0_DR_R = (frame->addr<<12) | (frame->data<<4) |(frame->chksum<<0);
-	while(SSI0_SR_R & (1<<0) == 0);
+	while((SSI0_SR_R & (1<<0)) == 0);
 }
 static uint16_t SPI_request(SPI * this, SPI_ADDR addr, uint8_t size, uint32_t timeout_ms)
 {
