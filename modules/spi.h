@@ -18,7 +18,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <malloc.h>
-#include "tm4c123gh6pm.h"
+
+#include "../tm4c123gh6pm.h"
 
 /*****************************    Defines    *******************************/
 
@@ -40,8 +41,8 @@ extern const struct SPI_CLASS
 	SPI*		(*new)(int16_t baudrate, int16_t timeout_ms);
 	void		(*del)(SPI* this);
 
-	void 		(*send)(SPI* this,int8_t data, SPI_ADDR addr, bool ack);
-	int16_t		(*request)(SPI* this, int32_t timeout_ms);
+	void 		(*send)(SPI* this, int8_t data, SPI_ADDR addr, bool ack);
+	int16_t		(*request)(SPI* this, SPI_ADDR addr, int8_t size, int32_t timeout_ms);
 } spi;
 
 /*****************************    Constructs   *****************************/

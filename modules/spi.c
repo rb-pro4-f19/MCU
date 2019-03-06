@@ -32,8 +32,9 @@ static SPI*			SPI_new(int16_t baudrate, int16_t timeout_ms);
 static void 		SPI_del(SPI* this);
 
 static void 		SPI_send(SPI* this, int8_t data, SPI_ADDR addr, bool ack);
-static int16_t 		SPI_request(SPI* this, int32_t timeout_ms);
+static int16_t 		SPI_request(SPI* this, SPI_ADDR addr, int8_t size, int32_t timeout_ms);
 
+static void 		_SPI_init(void);
 static void 		_SPI_transmit(SPI_FRAME* frame);
 static SPI_FRAME	_SPI_recieve();
 static int8_t		_SPI_checksum_generate(SPI_FRAME* frame);
