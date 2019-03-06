@@ -1,8 +1,7 @@
-//#include "spi.h"
-#include "tp.h"
+#include "spi.h"
 
 int main(void)
 {
-	//SPI* test = spi.new(10, 10);
+	SPI* test = spi.new(2, 500);
 	return 0;
 }
