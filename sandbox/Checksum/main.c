@@ -32,7 +32,7 @@ void printf_binary(uint16_t v)
 {
 	unsigned int mask = 1 << ((sizeof(uint16_t) << 3) - 1);
 
-	printf("0x%x : ", v);
+	printf("0x%04x : ", v);
 
 	while (mask) {
 		printf("%d", (v&mask ? 1 : 0));
@@ -70,6 +70,8 @@ int main(void)
 
 	printf_binary(tstframe);
 	printf_binary(tstchksum);
+
+	printf("\n");
 
 	printf_binary(tstframe2);
 	printf_binary(tstchksum2);
