@@ -76,7 +76,7 @@
 					</folderInfo>
 					<sourceEntries>
 						<entry excluding="modules" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
-						<entry excluding="tp.c|driver.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="modules"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="modules"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
