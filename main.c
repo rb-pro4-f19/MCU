@@ -17,6 +17,7 @@
 /************************    External Methods    ***************************/
 
 extern void tp_test(void);
+extern void chksum_test(void);
 
 /************************   Interrupt Handlers   ***************************/
 
@@ -42,6 +43,7 @@ int main(void)
 
     // test methods
 	tp_test();
+	chksum_test();
 
 	// super-loop
 	for(;;)

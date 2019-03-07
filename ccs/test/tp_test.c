@@ -26,10 +26,10 @@ void tp_test(void)
     // get absolute difference between current time and tp_test2 in ms
     int32_t diff2 = tp.delta_now(tp_test2, ms);
 
-    for(;;)
+    for(uint32_t i = 0; i < 1000000; i++);
     {
         tp.set(tp_test2, tp.now());
         volatile int test = tp.delta_now(tp_test1, ms);
-        for(int i = 0; i < 1000000; i++);
+        for(int i = 0; i < 100; i++);
     }
 }
