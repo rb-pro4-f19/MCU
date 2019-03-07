@@ -5,7 +5,7 @@
 #define NVIC_INT_CTRL_UNPEND_SYST 0x02000000  // Unpend a systick int
 #define SYSTICK_PRIORITY    0xE
 
-static BOOLEAN irq_status;
+static bool irq_status;
 
 void __enable_irq(void)
 {
@@ -14,30 +14,36 @@ void __enable_irq(void)
         "CPSIE i"
     );
 
-    irq_status = 1;
+    irq_status = true;
 }
 
-void __disable_irq(void)
+bool __disable_irq(void)
 {
-    asm volatile
+	// return false if interrupts are already disabled
+	if (!irq_status) return false;
+
+	// disable global interrupts using Assembly
+	asm volatile
     (
         "CPSID i"
     );
 
-    irq_status = 0;
+	// update status and return true
+    irq_status = false;
+	return true;
 }
 
-BOOLEAN get_irq(void)
+bool get_irq(void)
 {
-    return (BOOLEAN)irq_status;
+    return irq_status;
 }
 
-static int set_systick_reload_value(INT32U tick_period)
+static int set_systick_reload_value(uint32_t tick_period)
 {
     return tick_period * 16000;
 }
 
-void sys_tick_init(INT32U tick_period)
+void sys_tick_init(uint32_t tick_period)
 {
     //
     // Note flag is cleared by reading the STRCTL or writing CTCURRENT Register
