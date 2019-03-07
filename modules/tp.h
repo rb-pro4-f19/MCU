@@ -1,19 +1,14 @@
 /****************************************************************************
 * University of Southern Denmark
-* Embedded Programming (EMP)
+* RB-PRO4 F19
 *
-* MODULENAME.: timepoint.h
+* FILENAME...:	tp.h
+* MODULENAME.:	TIMEPOINT
+* API........:	https://goo.gl/Z2FV18
+* VERSION....:	1.1.0
 *
-* PROJECT....: emp-blinker
-*
-* DESCRIPTION: A TIMEPOINT object, used to track time.
-*
-* Change Log:
-*****************************************************************************
-* Date    Id    Change
-* YYMMDD
-* ---------------------------------------------------------------------------
-* 190220  MA    Module created.
+* DESCRIPTION:	Timepoint is an instance used for tracking time, including
+				calculating delta, delta_systick etc.
 *
 ****************************************************************************/
 
@@ -21,9 +16,9 @@
 
 /***************************** Include files *******************************/
 
-#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
 
-#include "emp_type.h"
 #include "driver.h"
 
 /*****************************    Defines    *******************************/
@@ -47,29 +42,24 @@ typedef enum    TP_TYPE TP_TYPE;
 extern const struct TIMEPOINT_CLASS
 {
 	// Constructor & Destructor
-	TIMEPOINT*	(*new)(TP_TYPE type);
+	TIMEPOINT*	(*new)(void);
 	void		(*del)(TIMEPOINT* this);
 
 	// Methods
-	void		(*tick)(TIMEPOINT* this);
+	void		(*systick)(void);
+	void 		(*init_systick)(uint32_t duration, TP_UNIT unit);
 
-	void		(*set_callback)(TIMEPOINT* this, void(*callback)());
-	void		(*set_systick)(TIMEPOINT* this, INT64U duration, TP_UNIT unit);
-
-	void		(*set_value)(TIMEPOINT* this, INT64U time_array[TIME_ARRAY_SIZE]);
-	INT64U		(*get_value)(TIMEPOINT* this, TP_UNIT unit);
-
+	void 		(*inc)(TIMEPOINT* this, uint64_t value, TP_UNIT unit);
+	void 		(*set)(TIMEPOINT* this, uint64_t time_array[TIME_ARRAY_SIZE]);
+	uint64_t	(*get)(TIMEPOINT* this, TP_UNIT unit);
+	uint64_t*	(*get_array)(TIMEPOINT* this);
+	uint64_t*	(*now)(void);
 	void		(*copy)(TIMEPOINT* des, TIMEPOINT* src);
-	INT64U		(*delta)(TIMEPOINT* tp1, TIMEPOINT* tp2, TP_UNIT unit);
+	uint64_t	(*delta)(TIMEPOINT* tp1, TIMEPOINT* tp2, TP_UNIT unit);
+	uint64_t	(*delta_now)(TIMEPOINT* tp1, TP_UNIT unit);
 } tp;
 
 /*****************************    Constructs   *****************************/
-
-enum TP_TYPE
-{
-	NORMAL,
-	SYSTEM
-};
 
 enum TP_UNIT
 {
@@ -81,11 +71,7 @@ enum TP_UNIT
 
 struct TIMEPOINT
 {
-	INT64U  volatile time_array[TIME_ARRAY_SIZE]; // 0: ns, 1: us, 2: ms, 3: s
-	INT64U  systick_dur_ns;
-
-	TP_TYPE type : 1;
-	FUNPTR  callback; //void(*callback)();
+	uint64_t	time_array[TIME_ARRAY_SIZE]; // 0: ns, 1: us, 2: ms, 3: s
 };
 
 /****************************** End Of Module ******************************/

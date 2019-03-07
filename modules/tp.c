@@ -1,24 +1,20 @@
 /****************************************************************************
 * University of Southern Denmark
-* Embedded Programming (EMP)
+* RB-PRO4 F19
 *
-* MODULENAME.: timepoint.c
+* FILENAME...:	tp.c
+* MODULENAME.:	TIMEPOINT
 *
-* PROJECT....: emp-blinker
-*
-* DESCRIPTION: See module specification file (.h-file).
-*
-* Change Log:
-*****************************************************************************
-* Date    Id    Change
-* YYMMDD
-* --------------------
-* 190220  MA    Module created.
+* For an API and DESCRIPTION, please refer to the  module
+* specification file (.h-file).
 *
 ****************************************************************************/
 
 /***************************** Include files *******************************/
 
+#include <stdint.h>
+#include <stdbool.h>
+#include <malloc.h>
 #include <math.h>
 #include <assert.h>
 
@@ -30,21 +26,25 @@
 
 /*****************************   Variables   *******************************/
 
+static TIMEPOINT* 		tp_sys;
+static uint32_t			systick_dur_ns;
+
 /************************  Function declarations ***************************/
 
-static TIMEPOINT*	TIMEPOINT_new(TP_TYPE type);
+static TIMEPOINT*	TIMEPOINT_new(void);
 static void 		TIMEPOINT_del(TIMEPOINT* this);
 
-static void 		_TIMEPOINT_increment(TIMEPOINT* this, INT64U value, TP_UNIT unit);
-static void			_TIMEPOINT_assert_irq(TIMEPOINT* this);
+static void 		TIMEPOINT_systick(void);
+static void 		TIMEPOINT_init_systick(uint32_t duration, TP_UNIT unit);
 
-static void 		TIMEPOINT_tick(TIMEPOINT* this);
-static void 		TIMEPOINT_set_callback(TIMEPOINT* this, void(*callback)());
-static void 		TIMEPOINT_set_systick(TIMEPOINT* this, INT64U duration, TP_UNIT unit);
-static void 		TIMEPOINT_set_value(TIMEPOINT* this, INT64U time_array[TIME_ARRAY_SIZE]);
-static INT64U 		TIMEPOINT_get_value(TIMEPOINT* this, TP_UNIT unit);
+static void 		TIMEPOINT_increment(TIMEPOINT* this, uint64_t value, TP_UNIT unit);
+static void 		TIMEPOINT_set(TIMEPOINT* this, uint64_t time_array[TIME_ARRAY_SIZE]);
+static uint64_t		TIMEPOINT_get(TIMEPOINT* this, TP_UNIT unit);
+static uint64_t*	TIMEPOINT_get_array(TIMEPOINT* this);
+static uint64_t*	TIMEPOINT_now(void);
 static void 		TIMEPOINT_copy(TIMEPOINT* des, TIMEPOINT* src);
-static INT64U 		TIMEPOINT_delta(TIMEPOINT* tp1, TIMEPOINT* tp2, TP_UNIT unit);
+static uint64_t 	TIMEPOINT_delta(TIMEPOINT* tp1, TIMEPOINT* tp2, TP_UNIT unit);
+static uint64_t 	TIMEPOINT_delta_now(TIMEPOINT* tp1, TP_UNIT unit);
 
 /****************************   Class Struct   *****************************/
 
@@ -53,40 +53,32 @@ const struct TIMEPOINT_CLASS tp =
 	.new			= &TIMEPOINT_new,
 	.del			= &TIMEPOINT_del,
 
-	.tick			= &TIMEPOINT_tick,
+	.systick		= &TIMEPOINT_systick,
+	.init_systick	= &TIMEPOINT_init_systick,
 
-	.set_callback	= &TIMEPOINT_set_callback,
-	.set_systick	= &TIMEPOINT_set_systick,
-
-	.set_value		= &TIMEPOINT_set_value,
-	.get_value		= &TIMEPOINT_get_value,
-
+	.inc			= &TIMEPOINT_increment,
+	.set			= &TIMEPOINT_set,
+	.get			= &TIMEPOINT_get,
+	.get_array		= &TIMEPOINT_get_array,
+	.now			= &TIMEPOINT_now,
 	.copy			= &TIMEPOINT_copy,
-	.delta			= &TIMEPOINT_delta
+	.delta			= &TIMEPOINT_delta,
+	.delta_now		= &TIMEPOINT_delta_now
 };
 
 /***********************   Constructive Functions   ************************/
 
-static TIMEPOINT* TIMEPOINT_new(TP_TYPE type)
+static TIMEPOINT* TIMEPOINT_new()
 {
 	// allocate memory
 	TIMEPOINT* this = malloc(sizeof(TIMEPOINT));
 
 	// initialize time_array
-	//for (int i = 0; i < sizeof(tp->time_array)/sizeof(INT64U); i++)
+	//for (int i = 0; i < sizeof(tp->time_array)/sizeof(uint64_t); i++)
 	for (int i = 0; i < TIME_ARRAY_SIZE; i++)
 	{
 		this->time_array[i] = 0;
 	}
-
-	// initialize callback to nullptr
-	this->callback = NULL;
-
-	// set systick duration according to TIMEPOINT type  (default = 100ns)
-	this->systick_dur_ns = (type == SYSTEM) ? 100 : 0;
-
-	// set timepoint type
-	this->type = type;
 
 	// return pointer to instance
 	return this;
@@ -103,7 +95,28 @@ static void TIMEPOINT_del(TIMEPOINT* this)
 
 /*****************************   Functions   *******************************/
 
-static void _TIMEPOINT_increment(TIMEPOINT* this, INT64U value, TP_UNIT unit)
+static void TIMEPOINT_systick(void)
+/****************************************************************************
+*   Input    : Pointer to TIMEPOINT instance.
+*   Function : Increment TIMEPOINT with a systick unit.
+****************************************************************************/
+{
+	// increment system timepoint by duration of a SYSTICK
+	assert(tp_sys != NULL);
+	tp.inc(tp_sys, systick_dur_ns, ns);
+}
+
+static void TIMEPOINT_init_systick(uint32_t duration, TP_UNIT unit)
+/****************************************************************************
+*   Input    : Pointer to TIMEPOINT instance.
+*   Function : Increment TIMEPOINT with a systick unit.
+****************************************************************************/
+{
+	tp_sys 			= tp.new();
+	systick_dur_ns	= duration * pow(10, 3 * unit);
+}
+
+static void TIMEPOINT_increment(TIMEPOINT* this, uint64_t value, TP_UNIT unit)
 /****************************************************************************
 *   Input    : this = pointer to TIMEPOINT instance.
 			   value = ammount to increment (unit defined by index).
@@ -113,66 +126,22 @@ static void _TIMEPOINT_increment(TIMEPOINT* this, INT64U value, TP_UNIT unit)
 {
 	this->time_array[unit] += value;
 
-	INT64U remainder = this->time_array[unit] % 1000;
-	INT64U quotient = this->time_array[unit] / 1000;
+	uint64_t remainder = this->time_array[unit] % 1000;
+	uint64_t quotient = this->time_array[unit] / 1000;
 
 	if (remainder != this->time_array[unit]) // OR quotient > 1 ????
 	{
 		this->time_array[unit] = remainder;
-		_TIMEPOINT_increment(this, quotient, unit + 1);
+		TIMEPOINT_increment(this, quotient, unit + 1);
 	}
 }
 
-static void _TIMEPOINT_assert_irq(TIMEPOINT* this)
-/****************************************************************************
-*   Input    : this = pointer to the TIMEPOINT to assert
-*   Function : Assert whether TIMEPOINT is NORMAL or interrupts disabled
-****************************************************************************/
-{
-	assert(this->type == NORMAL || get_irq() == 0);
-}
-
-static void TIMEPOINT_tick(TIMEPOINT* this)
-/****************************************************************************
-*   Input    : Pointer to TIMEPOINT instance.
-*   Function : Increment TIMEPOINT with a systick unit.
-****************************************************************************/
-{
-	// increment time_array
-	_TIMEPOINT_increment(this, this->systick_dur_ns, ns);
-
-	// call callback if defined
-	if (this->callback != NULL && this->type == SYSTEM)
-	{
-		this->callback();
-	}
-}
-
-static void TIMEPOINT_set_callback(TIMEPOINT* this, void(*callback)())
-/****************************************************************************
-*   Input    : this: Pointer to TIMEPOINT instance.
-			   callback: Pointer to void function.
-*   Function : Set the callback of a TIMEPOINT instance.
-****************************************************************************/
-{
-	this->callback = callback;
-}
-
-static void TIMEPOINT_set_systick(TIMEPOINT* this, INT64U duration, TP_UNIT unit)
-/****************************************************************************
-*   Input    : this: Pointer to TIMEPOINT instance.
-			   systick_dur_ns: Duration of systick tick in ns.
-*   Function : Set the systick_dur_ns of a TIMEPOINT instance.
-****************************************************************************/
-{
-	this->systick_dur_ns = duration * pow(10, 3 * unit);
-}
-
-static void TIMEPOINT_set_value(TIMEPOINT* this, INT64U time_array[TIME_ARRAY_SIZE])
+static void TIMEPOINT_set(TIMEPOINT* this, uint64_t time_array[TIME_ARRAY_SIZE])
 /****************************************************************************
 *   Input    : this: Pointer to TIMEPOINT instance.
 			   time_array[]: Array with new values.
-*   Function : Set the time_array values of a TIMEPOINT instance.
+*   Function : Set the time_array values of a TIMEPOINT instance, in
+			   the order ns, us, ms & s.
 ****************************************************************************/
 {
 	for (int i = 0; i < TIME_ARRAY_SIZE; i++)
@@ -181,7 +150,7 @@ static void TIMEPOINT_set_value(TIMEPOINT* this, INT64U time_array[TIME_ARRAY_SI
 	}
 }
 
-static INT64U TIMEPOINT_get_value(TIMEPOINT* this, TP_UNIT unit)
+static uint64_t TIMEPOINT_get(TIMEPOINT* this, TP_UNIT unit)
 /****************************************************************************
 *   Input    : this = Pointer to TIMEPOINT instance.
 			   unit = desired TP_UNIT.
@@ -190,10 +159,7 @@ static INT64U TIMEPOINT_get_value(TIMEPOINT* this, TP_UNIT unit)
 			   unit defined by TP_UNIT.
 ****************************************************************************/
 {
-	// assert mutual exclusion
-	_TIMEPOINT_assert_irq(this);
-
-	INT64U sum_ns = this->time_array[0] +
+	uint64_t sum_ns = this->time_array[0] +
 		this->time_array[1] * pow(10, 3) +
 		this->time_array[2] * pow(10, 6) +
 		this->time_array[3] * pow(10, 9);
@@ -201,7 +167,43 @@ static INT64U TIMEPOINT_get_value(TIMEPOINT* this, TP_UNIT unit)
 	return (sum_ns * pow(10, -3 * unit));
 }
 
-/***************************   Class Functions   ***************************/
+static uint64_t* TIMEPOINT_get_array(TIMEPOINT* this)
+/****************************************************************************
+*   Input    : this = Pointer to TIMEPOINT instance.
+			   unit = desired TP_UNIT.
+*   Output   : Pointer to a time_array[]
+*   Function : Return the time_array of a TIMEPOINT instance.
+****************************************************************************/
+{
+	static uint64_t time_array_copy[TIME_ARRAY_SIZE];
+
+	for (int i = 0; i < TIME_ARRAY_SIZE; i++)
+	{
+		time_array_copy[i] = this->time_array[i];
+	}
+
+	return time_array_copy;
+}
+
+static uint64_t* TIMEPOINT_now(void)
+/****************************************************************************
+*   Output   : Pointer to a time_array[]
+*   Function : Return the time_array of the SYSTICK TIMEPOINT instance.
+****************************************************************************/
+{
+	// disable interrupts if disabled
+	bool disabled_irq = __disable_irq();
+
+    // make copy of system time array
+    static uint64_t* sys_time_array_copy;
+    sys_time_array_copy = tp.get_array(tp_sys);
+
+	// enable interrupts if they got disabled
+	if (disabled_irq) { __enable_irq(); }
+
+	// return static copy
+	return sys_time_array_copy;
+}
 
 static void TIMEPOINT_copy(TIMEPOINT* des, TIMEPOINT * src)
 /****************************************************************************
@@ -209,10 +211,6 @@ static void TIMEPOINT_copy(TIMEPOINT* des, TIMEPOINT * src)
 *   Function : Copy time_array from 'src' TIMEPOINT to 'des' TIMEPOINT.
 ****************************************************************************/
 {
-	// assert mutual exclusion
-	_TIMEPOINT_assert_irq(des);
-	_TIMEPOINT_assert_irq(src);
-
 	// copy values of src time_array to des time_array
 	for (int i = 0; i < TIME_ARRAY_SIZE; i++)
 	{
@@ -220,7 +218,7 @@ static void TIMEPOINT_copy(TIMEPOINT* des, TIMEPOINT * src)
 	}
 }
 
-static INT64U TIMEPOINT_delta(TIMEPOINT* tp1, TIMEPOINT* tp2, TP_UNIT unit)
+static uint64_t TIMEPOINT_delta(TIMEPOINT* tp1, TIMEPOINT* tp2, TP_UNIT unit)
 /****************************************************************************
 *   Input    : tp1, tp2 = Pointers to TIMEPOINT instances.
                unit = TP_UNIT to be used.
@@ -229,16 +227,28 @@ static INT64U TIMEPOINT_delta(TIMEPOINT* tp1, TIMEPOINT* tp2, TP_UNIT unit)
                given in unit defined by TP_UNIT.
 ****************************************************************************/
 {
-	// assert mutual exclusion
-	_TIMEPOINT_assert_irq(tp1);
-	_TIMEPOINT_assert_irq(tp2);
+	uint64_t tp1_ns = tp.get(tp1, ns);
+	uint64_t tp2_ns = tp.get(tp2, ns);
 
-	INT64U tp1_ns = tp.get_value(tp1, ns);
-	INT64U tp2_ns = tp.get_value(tp2, ns);
-
-	INT64U tp_diff = (tp1_ns >= tp2_ns) ? tp1_ns - tp2_ns : tp2_ns - tp1_ns;
+	uint64_t tp_diff = (tp1_ns >= tp2_ns) ? tp1_ns - tp2_ns : tp2_ns - tp1_ns;
 
 	return (tp_diff * pow(10, -3 * unit));
+}
+
+static uint64_t TIMEPOINT_delta_now(TIMEPOINT* tp1, TP_UNIT unit)
+/****************************************************************************
+*   Input    : tp1 = Pointers to TIMEPOINT instances.
+               unit = TP_UNIT to be used.
+*   Output   : Unsigned long long integer.
+*   Function : Calculate absolute delta duration between two a TIMEPOINT
+               and the GLOBAL time in unit defined by TP_UNIT.
+****************************************************************************/
+{
+	// create temporary TIMEPOINT and set it to current time
+	TIMEPOINT tp_temp;
+	tp.set(&tp_temp, tp.now());
+
+	return tp.delta(&tp_temp, tp1, unit);
 }
 
 /****************************** End Of Module ******************************/
