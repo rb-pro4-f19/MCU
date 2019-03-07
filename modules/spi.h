@@ -42,23 +42,23 @@ extern const struct SPI_CLASS
 	SPI*		(*new)(uint8_t clkdiv, uint16_t timeout_ms);
 	void		(*del)(SPI* this);
 
-	void 		(*send)(SPI* this, SPI_ADDR addr, uint8_t data, bool ack);
-	uint16_t	(*request)(SPI* this, SPI_ADDR addr, uint8_t size, uint32_t timeout_ms);
+	void 		(*send)(SPI* this, SPI_ADDR addr, uint8_t data);
+	SPI_FRAME	(*request)(SPI* this, SPI_ADDR addr, uint8_t size);
 } spi;
 
 /*****************************    Constructs   *****************************/
 
 enum SPI_ADDR
 {
-	CTRL = 0x00,
-	MOT1,
-	MOT2,
-	ENC1,
-	ENC2,
-	HAL1,
-	HAL2,
-	CUR1,
-	CUR2
+	CTRL = 0b0000,
+	PWM1 = 0b0001,
+	PWM2 = 0b0010,
+	ENC1 = 0b0011,
+	ENC2 = 0b0100,
+	HALL1 = 0b0101,
+	HALL2 = 0b0110,
+	CUR1 = 0b0111,
+	CUR2 = 0b1000
 };
 
 enum SPI_FRMPART
@@ -79,7 +79,7 @@ struct SPI
 {
 	// public
 	uint8_t		clkdiv;
-	uint32_t		timeout_ms;
+	uint32_t	timeout_ms;
 };
 
 /****************************** End Of Module ******************************/
