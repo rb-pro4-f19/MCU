@@ -36,15 +36,15 @@
 
 /************************  Function Declarations ***************************/
 
-static SPI*			SPI_new(uint8_t clkdiv, uint16_t timeout_ms);// done
-static void 		SPI_del(SPI* this);	// done
+static SPI*			SPI_new(uint8_t clkdiv);
+static void 		SPI_del(SPI* this);
 
 static void 		SPI_send(SPI* this, SPI_ADDR addr, uint8_t data);
-static SPI_FRAME* 	SPI_request(SPI* this, SPI_ADDR addr, uint8_t size);
+static uint16_t 	SPI_request(SPI* this, SPI_ADDR addr, uint8_t size);
 
 static void 		_SPI_init(uint8_t clkdiv);
-static void 		_SPI_transmit(SPI_FRAME* frame);
-static SPI_FRAME*	_SPI_recieve(void);
+static void 		_SPI_transmit(SPI_FRAME* frame, bool block);
+static SPI_FRAME	_SPI_recieve(void);
 
 
 /****************************   Class Struct   *****************************/
@@ -60,7 +60,7 @@ const struct SPI_CLASS spi =
 
 /***********************   Constructive Functions   ************************/
 
-static SPI* SPI_new(uint8_t clkdiv, uint16_t timeout_ms)
+static SPI* SPI_new(uint8_t clkdiv)
 /****************************************************************************
 *   Input    : type = desired EXM_TYPE for the instance.
 			 : init_val = desired value for `var`.
@@ -73,7 +73,6 @@ static SPI* SPI_new(uint8_t clkdiv, uint16_t timeout_ms)
 
 	// initialize variables
 	this->clkdiv 		= clkdiv;
-	this->timeout_ms	= timeout_ms;
 
 	_SPI_init(clkdiv);	// Initiate SSI0 module
 
@@ -124,7 +123,7 @@ static void SPI_send(SPI* this, SPI_ADDR addr, uint8_t data)
 {
 	SPI_FRAME frame = {addr, data, 0};
 	frame.chksum = chksum.generate(&frame);
-	_SPI_transmit(&frame);		// Will Not wait until FIFO transmit is empty
+	_SPI_transmit(&frame, true);		// Will wait until FIFO transmit is empty
 }
 
 static uint16_t SPI_request(SPI* this, SPI_ADDR addr, uint8_t size)
@@ -133,18 +132,19 @@ static uint16_t SPI_request(SPI* this, SPI_ADDR addr, uint8_t size)
 *   Function :
 ****************************************************************************/
 {
-	laps=laps_initval;
-	while(laps < laperror)
+	uint8_t	laps = 0;
+	while(laps < LAP_ERROR)
 	{
-		SPI_FRAME frame_tx = { addr, size, 0};
-		frame_tx.chksum = chksum.generate((frame_tx.addr<<12) | (frame_tx.data<<4));
+		SPI_FRAME frame_tx = { addr, size, 0};						// is size redundant? 
+		frame_tx.chksum = chksum.generate(&frame_tx);
 		_SPI_transmit(&frame_tx,true);								// send request
 		SPI_FRAME frame_null = { 0, 0, 0 };
 		_SPI_transmit(&frame_null,false);
 		SPI_FRAME frame_rx = _SPI_recieve();
-		if(chksum.validate(frame_rx))
+		if(chksum.validate(&frame_rx))
 		{
-			return frame_rx;							// recive requested data
+			uint16_t data_recived = ((frame_rx.data << 0) | (frame_rx.addr << 8));
+			return data_recived;							// recive requested data
 		}
 		laps++;
 	}

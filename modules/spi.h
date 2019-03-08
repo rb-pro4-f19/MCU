@@ -39,11 +39,11 @@ typedef enum    SPI_FRMPART SPI_FRMPART;
 
 extern const struct SPI_CLASS
 {
-	SPI*		(*new)(uint8_t clkdiv, uint16_t timeout_ms);
+	SPI*		(*new)(uint8_t clkdiv);
 	void		(*del)(SPI* this);
 
 	void 		(*send)(SPI* this, SPI_ADDR addr, uint8_t data);
-	SPI_FRAME	(*request)(SPI* this, SPI_ADDR addr, uint8_t size);
+	uint16_t	(*request)(SPI* this, SPI_ADDR addr, uint8_t size);
 } spi;
 
 /*****************************    Constructs   *****************************/
@@ -79,7 +79,6 @@ struct SPI
 {
 	// public
 	uint8_t		clkdiv;
-	uint32_t	timeout_ms;
 };
 
 /****************************** End Of Module ******************************/
