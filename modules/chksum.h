@@ -19,10 +19,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <malloc.h>
+#include "spi.h"
 
 /*****************************    Defines    *******************************/
 
-typedef struct	SPI_FRAME SPI_FRAME;
 
 /***********************     External Variables     ************************/
 
@@ -30,13 +30,7 @@ typedef struct	SPI_FRAME SPI_FRAME;
 
 /*************************    Class Functions    ***************************/
 
-// copied from spi.h
-struct SPI_FRAME
-{
-	uint8_t addr : 4;
-	uint8_t data : 8;
-	uint8_t chksum : 4;
-};
+
 
 extern const struct CHECKSUM_CLASS
 {

@@ -50,7 +50,7 @@ static uint8_t CHECKSUM_generate(SPI_FRAME* frame)
 
 	// variables
 	uint8_t checksum = 0;
-	uint8_t frmdat = (frame.addr << 12 | frame.data << 4) & 0xFFF0;
+	uint8_t frmdat = ((frame->addr << 12) | (frame->data << 4)) & 0xFFF0;
 
 	// algorithm starting from Most Signifigant Nibble
 	for (int i = NUM_OF_NIBBLES; i >= 0; --i)
@@ -65,8 +65,8 @@ static uint8_t CHECKSUM_generate(SPI_FRAME* frame)
 
 static bool CHECKSUM_validate(SPI_FRAME* frame)
 {
-	uint8_t frmdat = (frame.addr << 12 | frame.data << 4) & 0xFFF0;
-	return (chksum.generate(frmdat) == frm->checksum);
+	uint8_t frmdat = (frame->addr << 12 | frame->data << 4) & 0xFFF0;
+	return (chksum.generate(frmdat) == frame->chksum);
 }
 
 static uint8_t _CHECKSUM_extract_nibble(uint16_t data, int pos)

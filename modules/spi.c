@@ -17,7 +17,8 @@
 #include <malloc.h>
 
 #include "spi.h"
-
+#include "chksum.h"
+#include "tp.h"
 /*****************************    Defines    *******************************/
 
 /*****************************   Constants   *******************************/
@@ -28,12 +29,10 @@
 #define SSI0_CR0_SPO 6
 #define SSI0_CR0_FRF 4
 #define SSI0_CR0_DSS 0
-#define laps_initval 0
-#define laperror 3
-#define runout 3
+#define LAP_ERROR 3
+#define TIMEOUT_RX_ms 50
 /*****************************   Variables   *******************************/
 // extern uint16_t ticks;
-int8_t laps = laps_initval;
 
 /************************  Function Declarations ***************************/
 
@@ -46,14 +45,7 @@ static SPI_FRAME* 	SPI_request(SPI* this, SPI_ADDR addr, uint8_t size);
 static void 		_SPI_init(uint8_t clkdiv);
 static void 		_SPI_transmit(SPI_FRAME* frame);
 static SPI_FRAME*	_SPI_recieve(void);
-static uint8_t		_SPI_checksum_generate(SPI_FRAME* frame);
-static bool			_SPI_checksum_validate(SPI_FRAME* frame);
-void				printf_binary(uint16_t v);
-uint8_t				bsd_chksum_4bit(uint16_t frame, int num_of_nibbles);
-uint8_t				extract_nibble(uint16_t data, int pos);
-uint8_t				ror_nibble(uint8_t data);
-uint8_t				rol_nibble(uint8_t data);
-uint16_t*			_reverse_bitstream(SPI_FRAME* frame);
+
 
 /****************************   Class Struct   *****************************/
 
@@ -82,13 +74,8 @@ static SPI* SPI_new(uint8_t clkdiv, uint16_t timeout_ms)
 	// initialize variables
 	this->clkdiv 		= clkdiv;
 	this->timeout_ms	= timeout_ms;
-/*	disable_global_int(); //Disable global interrupt
-	init_systick(); //Initiate systick
-	enable_global_int(); //Enable global interrupt*/
 
 	_SPI_init(clkdiv);	// Initiate SSI0 module
-
-	_SPI_checksum_generate(&((SPI_FRAME){10, 10, 0}));
 
 	// return pointer to instance
 	return this;
@@ -135,12 +122,12 @@ static void SPI_send(SPI* this, SPI_ADDR addr, uint8_t data)
 *   Function : Send a frame and will wait for a acknolendge or not
 ****************************************************************************/
 {
-	SPI_FRAME frame= {addr, data, 0};
-	frame.chksum = _SPI_checksum_generate(&frame);
+	SPI_FRAME frame = {addr, data, 0};
+	frame.chksum = chksum.generate(&frame);
 	_SPI_transmit(&frame);		// Will Not wait until FIFO transmit is empty
 }
 
-static SPI_FRAME* SPI_request(SPI* this, SPI_ADDR addr, uint8_t size)
+static uint16_t SPI_request(SPI* this, SPI_ADDR addr, uint8_t size)
 /****************************************************************************
 *	Input    : frame sending
 *   Function :
@@ -149,25 +136,22 @@ static SPI_FRAME* SPI_request(SPI* this, SPI_ADDR addr, uint8_t size)
 	laps=laps_initval;
 	while(laps < laperror)
 	{
-		SPI_FRAME frame = { addr, size, 0};
-		frame.chksum = _SPI_checksum_generate(&frame);
-		_SPI_transmit(&frame);								// send request
-		while((SSI0_SR_R & (1<<0)) == 0);					// wait until SSI0_DR_R tx is empty
-		SPI_FRAME emptyframe = { 0, 0, 0 };
-		_SPI_transmit(&emptyframe);
-//		ticks = 0;
-		while((SSI0_SR_R & (1<<3)) == 0); 		//  recive FIFO full = 1			ticks < runout ||
-		if((SSI0_SR_R & (1<<3)) == 0 && _SPI_checksum_validate(_SPI_recieve()))
+		SPI_FRAME frame_tx = { addr, size, 0};
+		frame_tx.chksum = chksum.generate((frame_tx.addr<<12) | (frame_tx.data<<4));
+		_SPI_transmit(&frame_tx,true);								// send request
+		SPI_FRAME frame_null = { 0, 0, 0 };
+		_SPI_transmit(&frame_null,false);
+		SPI_FRAME frame_rx = _SPI_recieve();
+		if(chksum.validate(frame_rx))
 		{
-
-			return _SPI_recieve();							// recive requested data
+			return frame_rx;							// recive requested data
 		}
 		laps++;
 	}
 }
 /****************' Private Functions ***************************************/
 
-static void _SPI_transmit(SPI_FRAME* frame)
+static void _SPI_transmit(SPI_FRAME* frame, bool block)
 /****************************************************************************
 *	Input    : frame transmitting
 *   Function :
@@ -175,104 +159,26 @@ static void _SPI_transmit(SPI_FRAME* frame)
 {
 
 	SSI0_DR_R = (frame->addr<<12) | (frame->data<<4) |(frame->chksum<<0);
-	//while((SSI0_SR_R & (1<<0)) == 0);
+	while(block && ((SSI0_SR_R & (1<<0)) == 0));
 }
 
-static SPI_FRAME* _SPI_recieve(void)
+static SPI_FRAME _SPI_recieve(void)
 {
-	uint32_t data;
-	data = SSI0_DR_R;
-	SPI_FRAME recivedframe = *(SPI_FRAME *)&data;
-	return &recivedframe;
-}
-
-static uint8_t _SPI_checksum_generate(SPI_FRAME * frame)
-{
-    // variables
-    uint8_t checksum = 0;
-
-    checksum = bsd_chksum_4bit(frame,4);
-	return checksum;
-}
-
-static bool _SPI_checksum_validate(SPI_FRAME * frame)
-{
-	SPI_FRAME testchksum;
-	testchksum.addr = frame->addr;
-	testchksum.data = frame->data;
-    testchksum.chksum =0;
-    testchksum.chksum = _SPI_checksum_generate(&testchksum);
-	if(testchksum.chksum == frame->chksum)
+    TIMEPOINT* tp_begin = tp.new();
+    tp.set(tp_begin,tp.now());
+	uint16_t recivedframe;
+	while((SSI0_SR_R & (1<<3)) == 0 && tp.delta_now(tp_begin,ms) < TIMEOUT_RX_ms);       //  recive FIFO full = 1
+	if((SSI0_SR_R & (1<<3)) == 0)
 	{
-		return true;
+        recivedframe = (uint16_t) SSI0_DR_R;
+        SPI_FRAME datafrom_DR_R = {(recivedframe >> 12), ((recivedframe >> 4)& 0x00FF), (recivedframe & 0x000F)};
+        return datafrom_DR_R;
 	}
-	return false;
-}
-
-uint8_t bsd_chksum_4bit(uint16_t data, int num_of_nibbles)
-{
-	// https://en.wikipedia.org/wiki/BSD_checksum
-
-	// variables
-	uint8_t checksum = 0;
-
-	// algorithm starting from Most Signifigant Nibble
-	for (int i = num_of_nibbles; i >= 0; --i)
+	else
 	{
-		checksum = ror_nibble(checksum);
-		checksum = checksum + extract_nibble(data, i);
-		checksum = checksum & 0xF;
+        SPI_FRAME frame_error = { 1, 0, 0};
+        return frame_error;
 	}
-
-	return checksum;
 }
-
-void printf_binary(uint16_t v)
-{
-	unsigned int mask = 1 << ((sizeof(uint16_t) << 3) - 1);
-
-	printf("0x%04x : ", v);
-
-	while (mask) {
-		printf("%d", (v&mask ? 1 : 0));
-		mask >>= 1;
-	}
-
-	printf("\n");
-}
-
-uint8_t extract_nibble(uint16_t data, int pos)
-{
-	// extract nibble at position n
-	// test = 0101 1111 1010 0000 -> extract_nibble(test, 2) = 1111
-
-	return ((data & (0xF << pos * 4)) >> (pos * 4));
-}
-
-uint8_t rol_nibble(uint8_t data)
-{
-	return ((data << 1) | (data >> 3) & 0xF);
-}
-
-uint8_t ror_nibble(uint8_t data)
-{
-	return ((data >> 1) | (data << 3) & 0xF);
-}
-
-/*
-uint16_t* _reverse_bitstream(uint16_t frame)			//
-{
-	uint16_t bitframe = (frame->addr<<12) | (frame->data<<4) |(frame->chksum<<0);
-
-	uint16_t temp;
-	for (int i = 0; i <= 15; i++)
-	{
-		if ((bitframe >> i) & 1)
-		{
-			temp |= (1 << (15 - i));
-		};
-	}
-	return *temp;
-}*/
 
 /****************************** End Of Module ******************************/

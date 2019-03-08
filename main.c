@@ -43,7 +43,7 @@ int main(void)
 
     // test methods
 	tp_test();
-	chksum_test();
+	//chksum_test();
 
 	// super-loop
 	for(;;)
