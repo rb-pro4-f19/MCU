@@ -22,16 +22,26 @@
 
 /*****************************    Defines    *******************************/
 
+typedef struct	SPI_FRAME SPI_FRAME;
+
 /***********************     External Variables     ************************/
 
 /*****************************   Constants   *******************************/
 
 /*************************    Class Functions    ***************************/
 
+// copied from spi.h
+struct SPI_FRAME
+{
+	uint8_t addr : 4;
+	uint8_t data : 8;
+	uint8_t chksum : 4;
+};
+
 extern const struct CHECKSUM_CLASS
 {
-	uint8_t		(*generate)(uint16_t frame);
-	bool 		(*validate)(uint16_t frame);
+	uint8_t		(*generate)(SPI_FRAME* frame);
+	bool 		(*validate)(SPI_FRAME* frame);
 
 } chksum;
 

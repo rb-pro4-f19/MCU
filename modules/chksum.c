@@ -27,8 +27,8 @@
 
 /************************  Function Declarations ***************************/
 
-static uint8_t		CHECKSUM_generate(uint16_t frame);
-static bool 		CHECKSUM_validate(uint16_t frame);
+static uint8_t		CHECKSUM_generate(SPI_FRAME* frame);
+static bool 		CHECKSUM_validate(SPI_FRAME* frame);
 
 static uint8_t		_CHECKSUM_extract_nibble(uint16_t data, int pos);
 static uint8_t 		_CHECKSUM_ror_nibble(uint8_t data);
@@ -44,31 +44,29 @@ const struct CHECKSUM_CLASS chksum =
 
 /*****************************   Functions   *******************************/
 
-static uint8_t CHECKSUM_generate(uint16_t frame)
+static uint8_t CHECKSUM_generate(SPI_FRAME* frame)
 {
 	// https://en.wikipedia.org/wiki/BSD_checksum
 
 	// variables
 	uint8_t checksum = 0;
-	frame = frame & 0xFFF0;
+	uint8_t frmdat = (frame.addr << 12 | frame.data << 4) & 0xFFF0;
 
 	// algorithm starting from Most Signifigant Nibble
 	for (int i = NUM_OF_NIBBLES; i >= 0; --i)
 	{
 		checksum = _CHECKSUM_ror_nibble(checksum);
-		checksum = checksum + _CHECKSUM_extract_nibble(frame, i);
+		checksum = checksum + _CHECKSUM_extract_nibble(frmdat, i);
 		checksum = checksum & 0xF;
 	}
 
 	return checksum;
 }
 
-static bool CHECKSUM_validate(uint16_t frame)
+static bool CHECKSUM_validate(SPI_FRAME* frame)
 {
-	uint8_t checksum	= frame & 0x000F
-	uint8_t frmdat		= frame & 0xFFF0;
-
-	return (chksum.generate(frmdat) == checksum);
+	uint8_t frmdat = (frame.addr << 12 | frame.data << 4) & 0xFFF0;
+	return (chksum.generate(frmdat) == frm->checksum);
 }
 
 static uint8_t _CHECKSUM_extract_nibble(uint16_t data, int pos)
