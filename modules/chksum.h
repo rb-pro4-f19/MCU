@@ -31,7 +31,7 @@
 extern const struct CHECKSUM_CLASS
 {
 	uint8_t		(*generate)(uint16_t frame);
-	bool 		(*validate)(uint16_t frame, uint8_t checksum);
+	bool 		(*validate)(uint16_t frame);
 
 } chksum;
 

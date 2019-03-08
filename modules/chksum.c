@@ -28,7 +28,7 @@
 /************************  Function Declarations ***************************/
 
 static uint8_t		CHECKSUM_generate(uint16_t frame);
-static bool 		CHECKSUM_validate(uint16_t frame, uint8_t checksum);
+static bool 		CHECKSUM_validate(uint16_t frame);
 
 static uint8_t		_CHECKSUM_extract_nibble(uint16_t data, int pos);
 static uint8_t 		_CHECKSUM_ror_nibble(uint8_t data);
@@ -63,10 +63,12 @@ static uint8_t CHECKSUM_generate(uint16_t frame)
 	return checksum;
 }
 
-static bool CHECKSUM_validate(uint16_t frame, uint8_t checksum)
+static bool CHECKSUM_validate(uint16_t frame)
 {
-	frame = frame & 0xFFF0;
-	return (chksum.generate(frame) == checksum);
+	uint8_t checksum	= frame & 0x000F
+	uint8_t frmdat		= frame & 0xFFF0;
+
+	return (chksum.generate(frmdat) == checksum);
 }
 
 static uint8_t _CHECKSUM_extract_nibble(uint16_t data, int pos)
