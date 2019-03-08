@@ -5,7 +5,7 @@
 * FILENAME...:	chksum.h
 * MODULENAME.:	CHECKSUM
 * API........:	https://goo.gl/cRHMYG
-* VERSION....:	1.0.0
+* VERSION....:	1.1.0
 *
 * DESCRIPTION:	4 bit BSD checksum on a 16 bit input, of which the least
 				signifigant nibble is masked out.
@@ -19,18 +19,16 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <malloc.h>
+
 #include "spi.h"
 
 /*****************************    Defines    *******************************/
-
 
 /***********************     External Variables     ************************/
 
 /*****************************   Constants   *******************************/
 
 /*************************    Class Functions    ***************************/
-
-
 
 extern const struct CHECKSUM_CLASS
 {

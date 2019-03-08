@@ -52,7 +52,7 @@ static uint8_t CHECKSUM_generate(SPI_FRAME* frame)
 	uint8_t checksum = 0;
 	uint8_t frmdat = ((frame->addr << 12) | (frame->data << 4)) & 0xFFF0;
 
-	// algorithm starting from Most Signifigant Nibble
+	// algorithm starting from MSB
 	for (int i = NUM_OF_NIBBLES; i >= 0; --i)
 	{
 		checksum = _CHECKSUM_ror_nibble(checksum);
