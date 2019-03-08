@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define __embedded__
+
 #include "driver.h"
 #include "tp.h"
 #include "spi.h"
