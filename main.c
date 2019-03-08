@@ -47,6 +47,11 @@ int main(void)
 	tp_test();
 	//chksum_test();
 
+	SPI* spi_test = spi.new(2);
+
+	spi.send(spi_test, CTRL, 0x0F);
+
+	spi.request(spi_test, ENC1, 12);
 
 	// super-loop
 	for(;;)
