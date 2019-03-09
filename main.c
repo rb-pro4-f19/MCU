@@ -20,6 +20,7 @@
 
 extern void tp_test(void);
 extern void chksum_test(void);
+extern void spi_test(void);
 
 /************************   Interrupt Handlers   ***************************/
 
@@ -45,13 +46,8 @@ int main(void)
 
     // test methods
 	tp_test();
-	//chksum_test();
-
-	SPI* spi_test = spi.new(2);
-
-	spi.send(spi_test, CTRL, 0x0F);
-
-	spi.request(spi_test, ENC1, 12);
+	chksum_test();
+	spi_test();
 
 	// super-loop
 	for(;;)
