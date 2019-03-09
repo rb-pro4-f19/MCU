@@ -3,7 +3,6 @@
 	
 #include "..\..\modules\spi.h"
 
-
 int main(void)
 {
 	//SPI* test = spi.new(2, 4);

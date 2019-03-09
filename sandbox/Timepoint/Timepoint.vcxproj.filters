@@ -21,15 +21,9 @@
     <ClCompile Include="..\..\modules\tp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\modules\driver.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\modules\tp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\modules\driver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

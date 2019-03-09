@@ -20,13 +20,13 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{723DDB3B-2188-4527-B25E-0E0DEE6EF906}</ProjectGuid>
-    <RootNamespace>Timepoint</RootNamespace>
+    <ProjectGuid>{5D37E053-9C93-41BD-B648-7395F98031C5}</ProjectGuid>
+    <RootNamespace>References</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -69,13 +69,21 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)..\modules\</IncludePath>
+    <ReferencePath>$(VC_ReferencesPath_x86);$(SolutionDir)..\modules\</ReferencePath>
+    <SourcePath>$(VC_SourcePath);$(SolutionDir)..\modules\</SourcePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\modules\</AdditionalIncludeDirectories>
+      <LanguageStandard>
+      </LanguageStandard>
+      <AdditionalOptions>/Tc %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -115,16 +123,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <!-- <ClCompile Include="..\..\modules\chksum.c" />
+    <ClCompile Include="..\..\modules\driver.c" />
+    <ClCompile Include="..\..\modules\spi.c" />
     <ClCompile Include="..\..\modules\tp.c" />
-    <ClCompile Include="main.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\modules\tp.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\References\References.vcxproj">
-      <Project>{5d37e053-9c93-41bd-b648-7395f98031c5}</Project>
-    </ProjectReference>
+    <ClInclude Include="..\..\modules\chksum.h" />
+    <ClInclude Include="..\..\modules\driver.h" />
+    <ClInclude Include="..\..\modules\emp_type.h" />
+    <ClInclude Include="..\..\modules\spi.h" />
+    <ClInclude Include="..\..\modules\tp.h" /> -->
+    <ClInclude Include="..\..\modules\*.h" />
+	<ClCompile Include="..\..\modules\*.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
