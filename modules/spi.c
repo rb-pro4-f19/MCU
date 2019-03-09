@@ -152,11 +152,11 @@ static bool SPI_send(SPI* this, SPI_ADDR addr, uint8_t data)
 ****************************************************************************/
 {
 	// construct frame & generate checksum
-	SPI_FRAME frame = {addr, data, 0};
-	frame.chksum = chksum.generate(&frame);
+	SPI_FRAME frm_send = { addr, data, 0 };
+	frm_send.chksum = chksum.generate(&frm_send);
 
-	// send frame
-	_SPI_transmit(&frame, true);
+	// transmit frame
+	_SPI_transmit(&frm_send, true);
 
 	// check for acknowledge
 	return true;
