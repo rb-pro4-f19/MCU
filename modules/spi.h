@@ -4,7 +4,8 @@
 *
 * FILENAME...:	spi.h
 * MODULENAME.:	SPI
-* API........:	github.com/rb-pro4-f19/MCU/blob/master/README.md
+* API........:	https://goo.gl/HVfyDq
+* VERSION....:	1.0.2
 *
 * DESCRIPTION:	An example module. This might have a lengthy description, in
 *				which case, we simply add some tabs.
@@ -42,23 +43,23 @@ extern const struct SPI_CLASS
 	SPI*		(*new)(uint8_t clkdiv);
 	void		(*del)(SPI* this);
 
-	void 		(*send)(SPI* this, SPI_ADDR addr, uint8_t data);
-	uint16_t	(*request)(SPI* this, SPI_ADDR addr, uint8_t size);
+	bool 		(*send)(SPI* this, SPI_ADDR addr, uint8_t data);
+	uint16_t	(*request)(SPI* this, SPI_ADDR addr);
 } spi;
 
 /*****************************    Constructs   *****************************/
 
 enum SPI_ADDR
 {
-	CTRL = 0b0000,
-	PWM1 = 0b0001,
-	PWM2 = 0b0010,
-	ENC1 = 0b0011,
-	ENC2 = 0b0100,
-	HALL1 = 0b0101,
-	HALL2 = 0b0110,
-	CUR1 = 0b0111,
-	CUR2 = 0b1000
+	CTRL 	= 0b0000,
+	PWM1 	= 0b0001,
+	PWM2 	= 0b0010,
+	ENC1 	= 0b0011,
+	ENC2 	= 0b0100,
+	HAL1 	= 0b0101,
+	HAL2 	= 0b0110,
+	AMP1 	= 0b0111,
+	AMP2 	= 0b1000
 };
 
 enum SPI_FRMPART
