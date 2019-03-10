@@ -1,5 +1,5 @@
 # MCU
-The microcontroller unit is the brain of the [Pan-Tilt system]: [1] and facilitates a CLI interface to the system as-well as controls the attached hardware using a joystick, through the means of a closed-loop feedback mechanism. The system is implemented using a super-loop structure with class-like [modules](#modules) and a central [system process](#system-process).
+The microcontroller unit is the brain of the [Pan-Tilt system][1] and facilitates a CLI interface to the system as-well as controls the attached hardware using a joystick, through the means of a closed-loop feedback mechanism. The system is implemented using a super-loop structure with class-like [modules](#modules) and a central [system process](#system-process).
 
 This project uses the [`RB-C99 1.0`][2] coding conventions.
 
