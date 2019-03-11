@@ -31,9 +31,13 @@ typedef enum    UART_FRMPART UART_FRMPART;
 
 /***********************     External Variables     ************************/
 
+
+
 /*****************************   Constants   *******************************/
 
 #define	EXM_ARRAY_SIZE 8
+
+// http://dev.ti.com/tirex/content/simplelink_cc26x2_sdk_2_20_00_36/docs/driverlib_cc13xx_cc26xx/cc13x0/register_descriptions/CPU_MMAP/UART0.html //
 
 
 /*************************    Class Functions    ***************************/
