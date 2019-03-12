@@ -21,5 +21,8 @@ void spi_test(void)
 
     // request data from ENC1
     uint16_t enc1_dat;
-    enc1_dat = spi.request(spi_test, ENC1);
+    if(spi.request(spi_test, ENC1, &enc1_dat))
+    {
+        return true;
+    }
 }

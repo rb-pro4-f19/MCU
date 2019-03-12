@@ -44,7 +44,7 @@ extern const struct SPI_CLASS
 	void		(*del)(SPI* this);
 
 	bool 		(*send)(SPI* this, SPI_ADDR addr, uint8_t data);
-	uint16_t	(*request)(SPI* this, SPI_ADDR addr);
+	bool		(*request)(SPI* this, SPI_ADDR addr, uint16_t* buffer);
 } spi;
 
 /*****************************    Constructs   *****************************/

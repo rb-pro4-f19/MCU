@@ -47,7 +47,7 @@ static SPI*			SPI_new(uint8_t clkdiv);
 static void 		SPI_del(SPI* this);
 
 static bool 		SPI_send(SPI* this, SPI_ADDR addr, uint8_t data);
-static uint16_t 	SPI_request(SPI* this, SPI_ADDR addr);
+static bool		 	SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer);
 
 static void 		_SPI_init(uint8_t clkdiv);
 static void 		_SPI_transmit(SPI_FRAME* frame, bool spinlock);
@@ -159,10 +159,15 @@ static bool SPI_send(SPI* this, SPI_ADDR addr, uint8_t data)
 	_SPI_transmit(&frm_send, true);
 
 	// check for acknowledge
-	return true;
+	SPI_FRAME frm_recived = _SPI_recieve();
+	if(chksum.validate(&frm_recived))
+	{
+		return true;
+	}
+	return false;
 }
 
-static uint16_t SPI_request(SPI* this, SPI_ADDR addr)
+static bool SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer)
 /****************************************************************************
 *	Input    : frame sending
 *   Function :
@@ -184,8 +189,10 @@ static uint16_t SPI_request(SPI* this, SPI_ADDR addr)
 		// validate recieved frame and return 12 bit data
 		if(chksum.validate(&frm_response))
 		{
-			return ((frm_response.data << 0) | (frm_response.addr << 8));
+			*buffer = ((frm_response.data << 0) | (frm_response.addr << 8));
+			return true;
 		}
+		return false;
 	}
 
 	// force error, since no data was recieved
