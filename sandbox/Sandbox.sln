@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Timepoint", "Timepoint\Time
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "References", "References\References.vcxproj", "{5D37E053-9C93-41BD-B648-7395F98031C5}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CArray", "CArray\CArray.vcxproj", "{DA45B5D3-E10A-4665-B5A3-B2654DE524A0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -61,6 +63,14 @@ Global
 		{5D37E053-9C93-41BD-B648-7395F98031C5}.Release|x64.Build.0 = Release|x64
 		{5D37E053-9C93-41BD-B648-7395F98031C5}.Release|x86.ActiveCfg = Release|Win32
 		{5D37E053-9C93-41BD-B648-7395F98031C5}.Release|x86.Build.0 = Release|Win32
+		{DA45B5D3-E10A-4665-B5A3-B2654DE524A0}.Debug|x64.ActiveCfg = Debug|x64
+		{DA45B5D3-E10A-4665-B5A3-B2654DE524A0}.Debug|x64.Build.0 = Debug|x64
+		{DA45B5D3-E10A-4665-B5A3-B2654DE524A0}.Debug|x86.ActiveCfg = Debug|Win32
+		{DA45B5D3-E10A-4665-B5A3-B2654DE524A0}.Debug|x86.Build.0 = Debug|Win32
+		{DA45B5D3-E10A-4665-B5A3-B2654DE524A0}.Release|x64.ActiveCfg = Release|x64
+		{DA45B5D3-E10A-4665-B5A3-B2654DE524A0}.Release|x64.Build.0 = Release|x64
+		{DA45B5D3-E10A-4665-B5A3-B2654DE524A0}.Release|x86.ActiveCfg = Release|Win32
+		{DA45B5D3-E10A-4665-B5A3-B2654DE524A0}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
