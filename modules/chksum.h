@@ -24,11 +24,19 @@
 
 /*****************************    Defines    *******************************/
 
+enum CHKSUM_SIZE CHKSUM_SIZE
+
 /***********************     External Variables     ************************/
 
 /*****************************   Constants   *******************************/
 
 /*************************    Class Functions    ***************************/
+
+enum CHKSUM_SIZE
+{
+	4BIT = 4,
+	8BIT = 8
+};
 
 extern const struct CHECKSUM_CLASS
 {
