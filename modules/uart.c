@@ -21,6 +21,7 @@
 #include "tp.h"
 
 /*****************************    Defines    *******************************/
+#define MINIMALFRAMESIZE 3
 
 /*****************************   Constants   *******************************/
 
@@ -31,12 +32,15 @@
 
 /************************  Function Declarations ***************************/
 
-static UART*    (*new)(uint8_t clkdiv);
-static void		(*del)(UART* this);
+static UART*    UART_new(uint8_t clkdiv);
+static void		UART_del(UART* this);
 
-static bool 	(*send)(UART* this, UART_TYPE addr, uint8_t *data);
-static uint16_t	(*recieve)(UART* this, UART_TYPE addr);
+static bool 	UART_send(UART* this, UART_TYPE addr, uint8_t *data);
+static uint16_t	UART_readframe(UART* this, UART_TYPE addr);
 
+static void 	_UART_recieve(void);
+static bool		_UART_transmit(uint8_t data);
+static bool		_UART_hasFrame(void);
 /****************************   Class Struct   *****************************/
 
 const struct UART_CLASS UART =
@@ -112,7 +116,7 @@ static void _UART_init()
 	SYSCTL_RCGCUART_R 	|= (1 << 0);	// enable UART0 Clock Gating Control (PA0 & PA1)
 
 	// provide clock to UART0
-	SYSCTL_RCGC1_R 		|= SYSCTL_RCGC1_UART0; 	
+	SYSCTL_RCGC1_R 		|= SYSCTL_RCGC1_UART0;
 
 	// disable UART
     UART0_CTL_R         = 0;
@@ -145,21 +149,63 @@ static bool UART_send(UART* this, UART_TYPE addr, uint8_t *data, uint8_t size)
 *   Function : Send a frame and will wait for a acknolendge or not
 ****************************************************************************/
 {
-}
 
+}
+static uint16_t	UART_readframe(UART* this, UART_TYPE addr)
+/****************************************************************************
+*   Input    : this = pointer to a UART instance
+*   Function : recieve a frame and check checksum
+****************************************************************************/
+{
+	uint8_t size = rx_buffer[0] & ~(0xF0);
+	if (size % 2) // odd number
+	{
+		for(uint8_t i = 0; i =< 15; i++)
+		{
+
+		}
+	}
+}
 /*************************   Private Functions   ***************************/
 
-static void _UART_transmit(UART_FRAME* frame, bool UARTnlock)
+static void _UART_transmit(uint8_t data)
 /****************************************************************************
-*	Input    : frame transmitting
+*	Input    : data transmitting
 *   Function :
 ****************************************************************************/
 {
+	while(UART0_FR_R & (1 << 5) == 1); // while Tx_FIFO is full
+	UART0_DR_R = data;
+}
+
+static bool	_UART_hasFrame(void)
+/****************************************************************************
+*   Function : test are there any frames in rx_buffer.
+****************************************************************************/
+{
+	if(rx_buffer[MINIMALFRAMESIZE] != 0)
+	{
+		return true;
+	}
+	_UART_recieve();
+	return false;
 }
 
 static UART_FRAME _UART_recieve(void)
+/****************************************************************************
+*   Function : move recived data to rx_buffer
+****************************************************************************/
 {
-
+	uint16_t rx_data;
+	for(uint8_t i = 0; i =< 15; i++)
+	{
+		rx_data = UART0_DR_R;
+		// test for UART overrun, Break error, Parity Error and Framing Error
+		if(rx_data & (1 << 11) == 0 && rx_data & (1 << 10) == 0 && rx_data & (1 << 9) == 0 && rx_data & (1 << 8) == 0)
+		{
+				rx_buffer[i] = (uint8_t) rx_data;
+		}
+	}
 }
 
 /****************************** End Of Module ******************************/

@@ -228,7 +228,7 @@ static SPI_FRAME _SPI_recieve(void)
 	// return frame from MISO register if any data
 	if((SSI0_SR_R & (1 << 3)) == 0)
 	{
-		uint16_t rx_data = (uint16_t)SSI0_DR_R;
+		uint16_t rx_data = (uint16_t) SSI0_DR_R;
 
 		return (SPI_FRAME){
 			(rx_data >> 12),

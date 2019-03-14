@@ -48,7 +48,7 @@ extern const struct UART_CLASS
 	void		(*del)(UART* this);
 
 	bool 		(*send)(UART* this, UART_TYPE addr, uint8_t *data, uint8_t size);
-	uint16_t	(*recieve)(UART* this, UART_TYPE addr);
+	uint16_t	(*readframe)(UART* this, UART_TYPE addr);
 } uart;
 
 /*****************************    Constructs   *****************************/
@@ -76,6 +76,8 @@ struct UART_FRAME
 struct UART
 {
 	// public
+	char	rx_buffer[16];
+	char	tx_buffer[256];
 };
 
 /****************************** End Of Module ******************************/
