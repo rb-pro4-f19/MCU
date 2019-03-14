@@ -15,7 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\modules\*.c">
+    <ClCompile Include="..\..\modules\chksum2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\modules\driver.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\modules\spi.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\modules\tp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\modules\*.c">
@@ -23,6 +32,9 @@
     </ClCompile>
     <ClCompile Include="..\..\modules\*.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\modules\chksum2.h">
+      <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\modules\driver.h">
       <Filter>Header Files</Filter>
@@ -42,9 +54,6 @@
     <ClCompile Include="..\..\modules\*.h">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\modules\*.h">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\modules\*.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -73,11 +82,26 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\modules\*.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\modules\chksum2.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\modules\*.h">
+    <ClInclude Include="..\..\modules\chksum2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\modules\driver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\modules\emp_type.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\modules\spi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\modules\tp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\modules\*.h">
@@ -90,6 +114,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\modules\*.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\modules\chksum2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

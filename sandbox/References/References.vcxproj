@@ -18,6 +18,12 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+	<ClCompile Include="..\..\modules\*.c" />
+  </ItemGroup>
+  <ItemGroup>
+	<ClInclude Include="..\..\modules\*.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{5D37E053-9C93-41BD-B648-7395F98031C5}</ProjectGuid>
@@ -73,6 +79,13 @@
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)..\modules\</IncludePath>
     <ReferencePath>$(VC_ReferencesPath_x86);$(SolutionDir)..\modules\</ReferencePath>
     <SourcePath>$(VC_SourcePath);$(SolutionDir)..\modules\</SourcePath>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ReferencePath>$(VC_ReferencesPath_x64);$(SolutionDir)..\modules\</ReferencePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)..\modules\</IncludePath>
+    <SourcePath>$(VC_SourcePath);$(SolutionDir)..\modules\</SourcePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -122,19 +135,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <!-- <ClCompile Include="..\..\modules\chksum.c" />
-    <ClCompile Include="..\..\modules\driver.c" />
-    <ClCompile Include="..\..\modules\spi.c" />
-    <ClCompile Include="..\..\modules\tp.c" />
-    <ClInclude Include="..\..\modules\chksum.h" />
-    <ClInclude Include="..\..\modules\driver.h" />
-    <ClInclude Include="..\..\modules\emp_type.h" />
-    <ClInclude Include="..\..\modules\spi.h" />
-    <ClInclude Include="..\..\modules\tp.h" /> -->
-    <ClInclude Include="..\..\modules\*.h" />
-    <ClCompile Include="..\..\modules\*.c" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
