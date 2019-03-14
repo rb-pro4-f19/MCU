@@ -32,9 +32,9 @@ int main(void)
 	// 8-bit checksum test
 	// input:   10101011 10001110
 	// size:    2 bytes (16 bits)
-	// output:  11010110
+	// output:  00100101
 
-	uint16_t data_8bit[2]	= { 0b10101011, 0b10001110 };
+	uint8_t  data_8bit[2]	= { 0b10101011, 0b10001110 };
 	uint8_t	 chks_8bit		= chksum2.gen_8bit(data_8bit, 2);
 	bool	 vali_8bit		= chksum2.val_8bit(data_8bit, 2, chks_8bit);
 
