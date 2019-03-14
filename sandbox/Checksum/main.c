@@ -2,82 +2,57 @@
 #include <stdio.h>
 #include <stdint.h>
 
-// prototypes
-void	printf_binary(uint16_t v);
-uint8_t	bsd_chksum_4bit(uint16_t frame, int num_of_nibbles);
-uint8_t extract_nibble(uint16_t data, int pos);
-uint8_t ror_nibble(uint8_t data);
-uint8_t rol_nibble(uint8_t data);
-
-uint8_t bsd_chksum_4bit(uint16_t data, int num_of_nibbles)
-{
-	// https://en.wikipedia.org/wiki/BSD_checksum
-
-	// variables
-	uint8_t checksum = 0;
-
-	// algorithm starting from Most Signifigant Nibble
-	for (int i = num_of_nibbles; i >= 0; --i)
-	{
-		checksum = ror_nibble(checksum);
-		checksum = checksum + extract_nibble(data, i);
-		checksum = checksum & 0xF;
-	}
-
-	return checksum;
-}
-
-void printf_binary(uint16_t v)
-{
-	unsigned int mask = 1 << ((sizeof(uint16_t) << 3) - 1);
-
-	printf("0x%04x : ", v);
-
-	while (mask) {
-		printf("%d", (v&mask ? 1 : 0));
-		mask >>= 1;
-	}
-
-	printf("\n");
-}
-
-uint8_t extract_nibble(uint16_t data, int pos)
-{	
-	// extract nibble at position n
-	// test = 0101 1111 1010 0000 -> extract_nibble(test, 2) = 1111
-
-	return ((data & (0xF << pos * 4)) >> (pos * 4));
-}
-
-uint8_t rol_nibble(uint8_t data)
-{
-	return ((data << 1) | (data >> 3) & 0xF);
-}
-
-uint8_t ror_nibble(uint8_t data)
-{
-	return ((data >> 1) | (data << 3) & 0xF);
-}
+#include "checksum_prototype.h"
+#include "..\..\modules\chksum2.h"
 
 int main(void)
 {	
-	// 12 bit checksum test
-	uint16_t test12bit_val = 0b101110001110;
-	uint16_t test12bit_sum = bsd_chksum_4bit(test12bit_val, 3);
+	// 4-bit checksum test
+	// input:   1011 1000 1110
+	// size:    3 nibbles (12 bits)
+	// output:  1000
 
-	printf("12-bit checksum\n");
-	printf_binary(test12bit_val);
-	printf_binary(test12bit_sum);
+	uint16_t data_4bit		= 0b101110001110;
+	uint8_t  chks_4bit		= chksum2.gen_4bit(data_4bit, 3);
+	bool	 vali_4bit		= chksum2.val_8bit(data_4bit, 2, chks_4bit);
+	
+	printf("[4-bit checksum]\n\n");
+
+	printf("input:\n");
+	printf_binary(data_4bit);
+
+	printf("\noutput:\n");
+	printf_binary(chks_4bit);
+
+	printf("\nvalidation:\n");
+	printf("The cheksum is: %s\n", (vali_4bit) ? "valid" : "invalid");
 
 	printf("\n");
 
-	// 16 bit checksum test
-	uint16_t test16bit_val = 0b1011100011100000;
-	uint16_t test16bit_sum = bsd_chksum_4bit(test16bit_val, 4);
+	// 8-bit checksum test
+	// input:   10101011 10001110
+	// size:    2 bytes (16 bits)
+	// output:  11010110
 
-	printf("16-bit checksum\n");
-	printf_binary(test16bit_val);
-	printf_binary(test16bit_sum);
+	uint16_t data_8bit[2]	= { 0b10101011, 0b10001110 };
+	uint8_t	 chks_8bit		= chksum2.gen_8bit(data_8bit, 2);
+	bool	 vali_8bit		= chksum2.val_8bit(data_8bit, 2, chks_8bit);
+
+	printf("[8-bit checksum]\n\n");
+
+	printf("input:\n");
+	for (int i = 0; i < 2; i++)
+	{
+		printf_binary(data_8bit[i]);
+	}
+
+	printf("\noutput:\n");
+	printf_binary(chks_8bit);
+
+	printf("\nvalidation:\n");
+	printf("The cheksum is: %s\n", (vali_8bit) ? "valid" : "invalid");
+
+	printf("\n");
 
 	// stall
 	getchar();
