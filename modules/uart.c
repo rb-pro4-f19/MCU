@@ -2,7 +2,7 @@
 * University of Southern Denmark
 * RB-PRO4 F19
 *
-* FILENAME...:	UART.c
+* FILENAME...:	uart.c
 * MODULENAME.:	UART
 *
 * For an API and DESCRIPTION, please refer to the  module
@@ -87,45 +87,53 @@ static void _UART_init()
 			   something interesting may happen. Maybe.
 ****************************************************************************/
 {
+//// TX0 = PA0 and RX0 = PA1
 
-    //// configure UART module
-
-    // provide clock to UART0
-	SYSCTL_RCGCSSI_R 	|= SYSCTL_RCGCUART_R;
+	//// configure ports
 
 	// enable clock to GPIO Port A
-	SYSCTL_RCGCGPIO_R 	|= ( 1 << 0 );
+	SYSCTL_RCGCGPIO_R	|= ( 1 << 0 );
 
-    // disable UART
-    UART0_CTL_R         |= 0;
+	// enable alternative function for the UART0 pins of PortA PA'x' (to be controlled by a peripheral)
+	GPIO_PORTA_AFSEL_R	|= (1 << 0) | (1 << 1);
 
-    // FORMULA 16Mhz / (16 ) = 1 MHz -> 1Mhz / clkdiv = Desired Baudrate
-    // 16.000.000/(16*115200) = 8.680
-    UART0_IBRD_R        |= 8;
+	// set currentlvl
+	GPIO_PORTA_DR2R_R	|= (1 << 0) | (1 << 1); 	// GPIO pin A0 & A1 has 2-mA drive
 
-    // 0.680 * 64 + 0.5 = 44
-    UART0_FBRD_R        |= 44;
-
-    // use system clock
-	UART0_CC_R          |= 0;
-
-	// 8-bit (WLEN IS 5 & 6 bit), no parity, 1 stop bit - no FIFO buffer
-	UART0_LCRH_R        |= ( 1 << 5) | (1 << 6);
-
-	// enable UART, RXE, TXE
-	UART0_CTL_R         |= ( 1 << 0 ) | ( 1 << 8 ) | ( 1 << 9 );
-
-    //// configure ports
-    //// TX0 = PA0 and RX0 = PA1
+	// configure port-mux-control to SSI0
+	GPIO_PORTA_PCTL_R 	|= (1 << 0) | (1 << 4);
 
 	// enable the pin's digital function
 	GPIO_PORTA_DEN_R 	|= ( 1 << 0 ) | ( 1 <<  1 );
 
-    // use PA0, PA1 alternate function
-    GPIO_PORTA_AFSEL_R  |= ( 1 << 0 ) | ( 1 << 1 );
+	//// UART0-module config
 
-    // connfigure PA0 and PA1 for UART_TYPE
-    GPIO_PORTA_PCTL_R   |= ( 1 << 0 ) | ( 1 << 4 );
+	//Enable UART module 0
+	SYSCTL_RCGCUART_R 	|= (1 << 0);	// enable UART0 Clock Gating Control (PA0 & PA1)
+
+	// provide clock to UART0
+	SYSCTL_RCGC1_R 		|= SYSCTL_RCGC1_UART0; 	
+
+	// disable UART
+    UART0_CTL_R         = 0;
+
+	// eq: uartclk / (16 * Baudrate) = BRD (Baud rate Divisor)
+	// 16 000 000 / (16 * 10 000 000) = 0.1
+
+    UART0_IBRD_R        |= 0;
+
+    // 0.1 * 64 + 0.5 = 7
+    UART0_FBRD_R        |= 7;
+
+	//  WLEN IS 8 bit, FIFO mode, 1 stop bit - no parity
+	UART0_LCRH_R        =  ( 0x3 << 5) | (1 << 4);
+
+	// use system clock
+	UART0_CC_R          |= 0;
+
+	// enable UART, RXE, TXE
+	UART0_CTL_R         |= ( 1 << 0 ) | ( 1 << 8 ) | ( 1 << 9 );
+
 
     // delay function for 1ms should be here
     for(int i = 0; i < 10000000; i++);

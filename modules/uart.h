@@ -2,8 +2,8 @@
 * University of Southern Denmark
 * RB-PRO4 F19
 *
-* FILENAME...:	spi.h
-* MODULENAME.:	SPI
+* FILENAME...:	uart.h
+* MODULENAME.:	UART
 * API........:	https://goo.gl/HVfyDq
 * VERSION....:	1.0.2
 *
@@ -49,7 +49,7 @@ extern const struct UART_CLASS
 
 	bool 		(*send)(UART* this, UART_TYPE addr, uint8_t *data, uint8_t size);
 	uint16_t	(*recieve)(UART* this, UART_TYPE addr);
-} spi;
+} uart;
 
 /*****************************    Constructs   *****************************/
 
