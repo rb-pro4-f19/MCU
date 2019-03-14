@@ -19,10 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-	<ClCompile Include="..\..\modules\*.c" />
-  </ItemGroup>
-  <ItemGroup>
-	<ClInclude Include="..\..\modules\*.h" />
+    <ClCompile Include="..\..\modules\chksum.c" />
+    <ClCompile Include="..\..\modules\chksum2.c" />
+    <ClCompile Include="..\..\modules\driver.c" />
+    <ClCompile Include="..\..\modules\spi.c" />
+    <ClCompile Include="..\..\modules\tp.c" />
+    <ClInclude Include="..\..\modules\*.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
