@@ -8,13 +8,11 @@ void uart_test(void)
 {
     UART* uart1 = uart.new(2);
 
-    uint8_t payloadarr[14] = {0};
-
     UART_FRAME ngt =
     {
 	 	 0,
 		 0,
-		 payloadarr,
+		 (uint8_t[14]){0},
 		 0
     };
 
@@ -23,7 +21,7 @@ void uart_test(void)
 
     	if(uart.read(uart1, &ngt))
 		{
-			uart.send(uart1, ACK, payloadarr, ngt.size);
+			uart.send(uart1, ACK, ngt.payload, ngt.size);
 		}
 
     	for (int i = 0; i < 1000; i++);
