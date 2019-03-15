@@ -5,10 +5,9 @@
 * FILENAME...:	chksum.h
 * MODULENAME.:	CHECKSUM
 * API........:	https://goo.gl/cRHMYG
-* VERSION....:	1.1.0
+* VERSION....:	1.2.1
 *
-* DESCRIPTION:	4 bit BSD checksum on a 16 bit input, of which the least
-				signifigant nibble is masked out.
+* DESCRIPTION:	4-bit and 8-bit BSD based checksum on variable length inputs.
 *
 ****************************************************************************/
 
@@ -20,11 +19,7 @@
 #include <stdbool.h>
 #include <malloc.h>
 
-#include "spi.h"
-
 /*****************************    Defines    *******************************/
-
-typedef enum CHKSUM_SIZE CHKSUM_SIZE;
 
 /***********************     External Variables     ************************/
 
@@ -34,9 +29,13 @@ typedef enum CHKSUM_SIZE CHKSUM_SIZE;
 
 extern const struct CHECKSUM_CLASS
 {
-	uint8_t		(*generate)(SPI_FRAME* frame);
-	bool 		(*validate)(SPI_FRAME* frame);
+	// 4 bit
+	uint8_t		(*gen_4bit)(uint16_t data, uint8_t num_of_nibbles);
+	bool		(*val_4bit)(uint16_t data, uint8_t num_of_nibbles, uint8_t checksum);
 
+	// 8 bit
+	uint8_t		(*gen_8bit)(uint8_t* data_array, uint8_t size);
+	bool		(*val_8bit)(uint8_t* data_array, uint8_t size, uint8_t checksum);
 } chksum;
 
 /****************************** End Of Module ******************************/

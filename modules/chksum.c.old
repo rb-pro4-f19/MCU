@@ -15,87 +15,61 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "chksum2.h"
+#include "chksum.h"
 
 /*****************************    Defines    *******************************/
 
 /*****************************   Constants   *******************************/
 
+#define NUM_OF_NIBBLES 4
+
 /*****************************   Variables   *******************************/
 
 /************************  Function Declarations ***************************/
 
-static uint8_t		CHECKSUM_gen_4bit(uint16_t data, uint8_t num_of_nibbles);
-static bool 		CHECKSUM_val_4bit(uint16_t data, uint8_t num_of_nibbles, uint8_t checksum);
+static uint8_t		CHECKSUM_generate(SPI_FRAME* frame);
+static bool 		CHECKSUM_validate(SPI_FRAME* frame);
 
-static uint8_t		CHECKSUM_gen_8bit(uint8_t* data_array, uint8_t size);
-static bool 		CHECKSUM_val_8bit(uint8_t* data_array, uint8_t size, uint8_t checksum);
-
-static uint8_t		_CHECKSUM_extract_nibble(uint16_t data, uint8_t pos);
+static uint8_t		_CHECKSUM_extract_nibble(uint16_t data, int pos);
 static uint8_t 		_CHECKSUM_ror_nibble(uint8_t data);
 static uint8_t 		_CHECKSUM_rol_nibble(uint8_t data);
-static uint8_t 		_CHECKSUM_ror_byte(uint8_t data);
-static uint8_t 		_CHECKSUM_rol_byte(uint8_t data);
 
 /****************************   Class Struct   *****************************/
 
 const struct CHECKSUM_CLASS chksum =
 {
-	.gen_4bit		= &CHECKSUM_gen_4bit,
-	.val_4bit		= &CHECKSUM_val_4bit,
-	.gen_8bit		= &CHECKSUM_gen_8bit,
-	.val_8bit		= &CHECKSUM_val_8bit
+	.generate		= &CHECKSUM_generate,
+	.validate		= &CHECKSUM_validate
 };
 
 /*****************************   Functions   *******************************/
 
-static uint8_t CHECKSUM_gen_4bit(uint16_t data, uint8_t num_of_nibbles)
+static uint8_t CHECKSUM_generate(SPI_FRAME* frame)
 {
 	// https://en.wikipedia.org/wiki/BSD_checksum
 
 	// variables
 	uint8_t checksum = 0;
+	uint8_t frmdat = ((frame->addr << 12) | (frame->data << 4)) & 0xFFF0;
 
 	// algorithm starting from MSB
-	for (int i = num_of_nibbles; i >= 0; --i)
+	for (int i = NUM_OF_NIBBLES; i >= 0; --i)
 	{
 		checksum = _CHECKSUM_ror_nibble(checksum);
-		checksum = checksum + _CHECKSUM_extract_nibble(data, i);
+		checksum = checksum + _CHECKSUM_extract_nibble(frmdat, i);
 		checksum = checksum & 0xF;
 	}
 
 	return checksum;
 }
 
-static bool CHECKSUM_val_4bit(uint16_t data, uint8_t num_of_nibbles, uint8_t checksum)
+static bool CHECKSUM_validate(SPI_FRAME* frame)
 {
-	return (chksum2.gen_4bit(data, num_of_nibbles) == checksum);
+	uint8_t frmdat = (frame->addr << 12 | frame->data << 4) & 0xFFF0;
+	return (chksum.generate(frmdat) == frame->chksum);
 }
 
-static uint8_t CHECKSUM_gen_8bit(uint8_t* data_array, uint8_t size)
-{
-	// https://en.wikipedia.org/wiki/BSD_checksum
-
-	// variables
-	uint8_t checksum = 0;
-
-	// algorithm starting from MSB
-	for (int i = size; i >= 0; --i)
-	{
-		checksum = _CHECKSUM_ror_byte(checksum);
-		checksum = checksum + data_array[i];
-		checksum = checksum & 0xFF;
-	}
-
-	return checksum;
-}
-
-static bool CHECKSUM_val_8bit(uint8_t* data_array, uint8_t size, uint8_t checksum)
-{
-	return (chksum2.gen_8bit(data_array, size) == checksum);
-}
-
-static uint8_t _CHECKSUM_extract_nibble(uint16_t data, uint8_t pos)
+static uint8_t _CHECKSUM_extract_nibble(uint16_t data, int pos)
 {
 	// extract nibble at position n
 	// test = 0101 1111 1010 0000 -> extract_nibble(test, 2) = 1111
@@ -111,16 +85,6 @@ static uint8_t _CHECKSUM_ror_nibble(uint8_t data)
 static uint8_t _CHECKSUM_rol_nibble(uint8_t data)
 {
 	return ((data << 1) | (data >> 3) & 0xF);
-}
-
-static uint8_t _CHECKSUM_ror_byte(uint8_t data)
-{
-	return ((data >> 1) | (data << 7) & 0xFF);
-}
-
-static uint8_t _CHECKSUM_rol_byte(uint8_t data)
-{
-	return ((data << 1) | (data >> 7) & 0xFF);
 }
 
 /****************************** End Of Module ******************************/
