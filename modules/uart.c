@@ -178,38 +178,53 @@ static bool UART_read(UART* this, UART_FRAME* frame)
 	uint8_t* rx_payload;
 	bool rx_success = false;
 	TIMEPOINT*	tp_timeout 	= tp.new();
+	uint8_t rx_header = 0;
 
+	// if rx_FIFO is empty
+	if(UART0_FR_R & (1 << 4))
+	{
+		return false;
+	}
+
+	// clear rx_buffer
 	for(int i = 0; i < 16; i++)
 	{
 		rx_buffer[i] = 0;
 	}
 
-	tp.set(tp_timeout, tp.now());
-
-	// change structure to recieve frame
-
-	while(tp.delta_now(tp_timeout, ms) < RX_TIMEOUT_MS)
+	if(!_UART_recieve(rx_buffer[rx_counter++]))
 	{
+		return false;
+	}
+
+	frame->type = (rx_buffer[0] & 0b11100000) >> 5;
+	frame->size = (rx_buffer[0] & 0b00011111) >> 0;
+
+
+
+	tp.set(tp_timeout, tp.now()); // start timer
+
+	// +2 (1 byte header & 1 byte chksum)
+	while(tp.delta_now(tp_timeout, ms) < RX_TIMEOUT_MS && rx_counter < (frame->size + 2))
+	{
+		// if rx_FIFO is empty
 		if (!(UART0_FR_R & (1 << 4)))
 		{
-			rx_success = _UART_recieve(&rx_buffer[rx_counter++]); // empty rx_FIFO to rx_buffer
+			rx_success = _UART_recieve(&rx_buffer[rx_counter++]);
 		}
 	}
 
-	if(rx_counter == 0 || !rx_success)
+	if(!rx_success)
 	{
 		return false;
 	}
 
 	rx_payload = &rx_buffer[1];
-
-	frame->type = (rx_buffer[0] & 0b11100000) >> 5;
-	frame->size = (rx_buffer[0] & 0b00011111) >> 0;
 	frame->payload = rx_payload;
-	frame->chksum = rx_buffer[rx_counter];
+	frame->chksum = rx_buffer[(frame->size) + 2];
 
-	// validate checksum
-	if(!chksum.val_8bit(rx_buffer, rx_counter - 1, frame->chksum))
+	// validate checksum | +1 1 byte header
+	if(!chksum.val_8bit(rx_buffer, frame->size + 1, frame->chksum))
 	{
 		return false;
 	}
