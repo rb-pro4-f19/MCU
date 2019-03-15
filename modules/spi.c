@@ -153,14 +153,14 @@ static bool SPI_send(SPI* this, SPI_ADDR addr, uint8_t data)
 {
 	// construct frame & generate checksum
 	SPI_FRAME frm_send = { addr, data, 0 };
-	frm_send.chksum = chksum.generate(&frm_send);
+	frm_send.chksum = chksum.gen_4bit(((frm_send.addr << 12) | (frm_send.data << 4)) & 0xFFF0, 3);
 
 	// transmit frame
 	_SPI_transmit(&frm_send, true);
 
 	// check for acknowledge
 	SPI_FRAME frm_recived = _SPI_recieve();
-	if(chksum.validate(&frm_recived))
+	if (chksum.val_4bit(((frm_recived.addr << 12) | (frm_recived.data << 4)) & 0xFFF0, 3, frm_recived.chksum))
 	{
 		return true;
 	}
@@ -175,7 +175,7 @@ static bool SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer)
 {
 	// construct frame and generate checksum
 	SPI_FRAME frm_request	= { addr, 0, 0 };
-	frm_request.chksum 		= chksum.generate(&frm_request);
+	frm_request.chksum = chksum.gen_4bit(((frm_request.addr << 12) | (frm_request.data << 4)) & 0xFFF0, 3);
 
 	// attempt to send request and get response
 	for (int i = 0; i < RX_MAX_ATTEMPTS; i++)
@@ -187,7 +187,7 @@ static bool SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer)
 		SPI_FRAME frm_response = _SPI_recieve();
 
 		// validate recieved frame and return 12 bit data
-		if(chksum.validate(&frm_response))
+		if(chksum.val_4bit(((frm_response.addr << 12) | (frm_response.data << 4)) & 0xFFF0, 3, frm_response.chksum))
 		{
 			*buffer = ((frm_response.data << 0) | (frm_response.addr << 8));
 			return true;

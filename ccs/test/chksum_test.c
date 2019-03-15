@@ -2,7 +2,7 @@
 #include <stdbool.h>
 
 #include "spi.h"
-#include "chksum2.h"
+#include "chksum.h"
 
 void chksum_test(void)
 {
@@ -18,8 +18,8 @@ void chksum_test(void)
     // output:  1000
 
     uint16_t data_4bit      = 0b101110001110;
-    uint8_t  chks_4bit      = chksum2.gen_4bit(data_4bit, 3);
-    bool     vali_4bit      = chksum2.val_4bit(data_4bit, 2, chks_4bit);
+    uint8_t  chks_4bit      = chksum.gen_4bit(data_4bit, 3);
+    bool     vali_4bit      = chksum.val_4bit(data_4bit, 2, chks_4bit);
 
     // 8-bit checksum test
     // input:   1010'1011 ; 1000'1110
@@ -27,6 +27,6 @@ void chksum_test(void)
     // output:  0010'0101
 
     uint8_t  data_8bit[2]   = { 0b10101011, 0b10001110 };
-    uint8_t  chks_8bit      = chksum2.gen_8bit(data_8bit, 2);
-    bool     vali_8bit      = chksum2.val_8bit(data_8bit, 2, chks_8bit);
+    uint8_t  chks_8bit      = chksum.gen_8bit(data_8bit, 2);
+    bool     vali_8bit      = chksum.val_8bit(data_8bit, 2, chks_8bit);
 }

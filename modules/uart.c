@@ -16,12 +16,13 @@
 #include <stdbool.h>
 #include <malloc.h>
 
-#include "UART.h"
+#include "uart.h"
 #include "chksum.h"
 #include "tp.h"
 
 /*****************************    Defines    *******************************/
 #define MINIMALFRAMESIZE 3
+#define RX_TIMEOUT_MS 50
 
 /*****************************   Constants   *******************************/
 
@@ -35,21 +36,21 @@
 static UART*    UART_new(uint8_t clkdiv);
 static void		UART_del(UART* this);
 
-static bool 	UART_send(UART* this, UART_TYPE addr, uint8_t *data);
-static uint16_t	UART_readframe(UART* this, UART_TYPE addr);
+static bool 	UART_send(UART* this, UART_TYPE type, uint8_t *data, uint8_t size);
+static bool		UART_read(UART* this, UART_FRAME* frame);
 
-static void 	_UART_recieve(void);
-static bool		_UART_transmit(uint8_t data);
-static bool		_UART_hasFrame(void);
+static void		_UART_init();
+static bool 	_UART_recieve(uint8_t * byte);
+static void		_UART_transmit(uint8_t data);
 /****************************   Class Struct   *****************************/
 
-const struct UART_CLASS UART =
+const struct UART_CLASS uart =
 {
 	.new			= &UART_new,
 	.del			= &UART_del,
 
 	.send			= &UART_send,
-	.recieve		= &UART_request
+	.read			= &UART_read
 };
 
 /***********************   Constructive Functions   ************************/
@@ -66,14 +67,14 @@ static UART* UART_new(uint8_t clkdiv)
 	UART* this = malloc(sizeof(UART));
 
 	// initialize variables
-
-	_UART_init(clkdiv);	// Initiate SSI0 module
+	this->clkdiv = clkdiv;
+	_UART_init();	// Initiate UART0 module
 
 	// return pointer to instance
 	return this;
 }
 
-static void UART_del(* this)
+static void UART_del(UART* this)
 /****************************************************************************
 *   Input    : this = pointer to a EXAMPLE instance.
 *   Function : Destructor of a EXAMPLE instance.
@@ -88,7 +89,7 @@ static void _UART_init()
 /****************************************************************************
 *   Input    : this = pointer to a EXAMPLE instance.
 *   Function : Sets `is_set` of an EXAMPLE instance to false, such that
-			   something interesting may happen. Maybe.
+*			   something interesting may happen. Maybe.
 ****************************************************************************/
 {
 //// TX0 = PA0 and RX0 = PA1
@@ -140,30 +141,72 @@ static void _UART_init()
 
 
     // delay function for 1ms should be here
-    for(int i = 0; i < 10000000; i++);
+//    for(int i = 0; i < 10000000; i++);
 }
 
-static bool UART_send(UART* this, UART_TYPE addr, uint8_t *data, uint8_t size)
+static bool UART_send(UART* this, UART_TYPE type, uint8_t *data, uint8_t size)
 /****************************************************************************
 *   Input    : this = pointer to a UART instance
 *   Function : Send a frame and will wait for a acknolendge or not
 ****************************************************************************/
 {
+	uint8_t tx_buffer[258];		// construct array max size (1 byte header + 256 byte data + 1 byte chksum)
 
+	tx_buffer[0] = (type << 5) | (size << 0);		// insert hedaer
+
+	for(int i = 0; i < size + 1; i++)				// insert data / payload
+	{
+		tx_buffer[i + 1] = data[i];
+	}
+
+	tx_buffer[size + 2] = chksum.gen_8bit(tx_buffer, size);	// insert chksum
+
+	for(int i = 0; i < size + 2; i++)
+	{
+		_UART_transmit(tx_buffer[i]);			// transmit frame
+	}
 }
-static uint16_t	UART_readframe(UART* this, UART_TYPE addr)
+
+static bool UART_read(UART* this, UART_FRAME* frame)
 /****************************************************************************
 *   Input    : this = pointer to a UART instance
 *   Function : recieve a frame and check checksum
 ****************************************************************************/
 {
-	uint8_t size = rx_buffer[0] & ~(0xF0);
-	if (size % 2) // odd number
-	{
-		for(uint8_t i = 0; i =< 15; i++)
-		{
+	static uint8_t	rx_buffer[16];
+	uint8_t rx_counter = 0;
+	uint8_t* rx_payload;
+	bool rx_error = false;
+	TIMEPOINT*	tp_timeout 	= tp.new();
 
-		}
+
+	for(int i = 0; i < 16; i++)
+	{
+		rx_buffer[i] = 0;
+	}
+
+	tp.set(tp_timeout, tp.now());
+
+	while(UART0_FR_R & (1<<4) == 0 && tp.delta_now(tp_timeout, ms) < RX_TIMEOUT_MS)
+	{
+		rx_error = !(_UART_recieve(&rx_buffer[rx_counter++])); // empty rx_FIFO to rx_buffer
+	}
+
+	if(rx_counter == 0 || rx_error )
+	{
+		return false;
+	}
+
+	rx_payload = &rx_buffer[1];
+
+	frame->type = rx_buffer[0] & 0b11100000;
+	frame->size = rx_buffer[0] & 0b00011111;
+	frame->payload = rx_payload;
+	frame->chksum = rx_buffer[rx_counter];
+
+	if(chksum.val_8bit(rx_buffer, rx_counter - 1, frame->chksum))
+	{
+		return true;
 	}
 }
 /*************************   Private Functions   ***************************/
@@ -178,34 +221,19 @@ static void _UART_transmit(uint8_t data)
 	UART0_DR_R = data;
 }
 
-static bool	_UART_hasFrame(void)
-/****************************************************************************
-*   Function : test are there any frames in rx_buffer.
-****************************************************************************/
-{
-	if(rx_buffer[MINIMALFRAMESIZE] != 0)
-	{
-		return true;
-	}
-	_UART_recieve();
-	return false;
-}
-
-static UART_FRAME _UART_recieve(void)
+static bool _UART_recieve(uint8_t* byte)
 /****************************************************************************
 *   Function : move recived data to rx_buffer
 ****************************************************************************/
 {
-	uint16_t rx_data;
-	for(uint8_t i = 0; i =< 15; i++)
-	{
-		rx_data = UART0_DR_R;
+	uint32_t rx_data = UART0_DR_R;
 		// test for UART overrun, Break error, Parity Error and Framing Error
-		if(rx_data & (1 << 11) == 0 && rx_data & (1 << 10) == 0 && rx_data & (1 << 9) == 0 && rx_data & (1 << 8) == 0)
+		if(rx_data & (1 << 11) || rx_data & (1 << 10) || rx_data & (1 << 9) || rx_data & (1 << 8))
 		{
-				rx_buffer[i] = (uint8_t) rx_data;
+			return false;
 		}
-	}
+		byte = (uint8_t) rx_data;
+		return true;
 }
 
 /****************************** End Of Module ******************************/

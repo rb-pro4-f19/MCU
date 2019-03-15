@@ -47,8 +47,8 @@ extern const struct UART_CLASS
 	UART*		(*new)(uint8_t clkdiv);
 	void		(*del)(UART* this);
 
-	bool 		(*send)(UART* this, UART_TYPE addr, uint8_t *data, uint8_t size);
-	uint16_t	(*readframe)(UART* this, UART_TYPE addr);
+	bool 		(*send)(UART* this, UART_TYPE type, uint8_t *data, uint8_t size);
+	bool		(*read)(UART* this, UART_TYPE addr);
 } uart;
 
 /*****************************    Constructs   *****************************/
@@ -59,25 +59,19 @@ enum UART_TYPE
 	SET 	= 0x02
 };
 
-enum UART_FRMPART
-{
-	ADDR,
-	DATA,
-	CHKSUM
-};
 
 struct UART_FRAME
 {
-	uint8_t type       : 8;
-	uint8_t payload    : 8;
-	uint8_t chksum     : 8;
+	uint8_t type : 3;
+	uint8_t size : 5;
+	uint8_t* payload;
+	uint8_t chksum;
 };
 
 struct UART
 {
 	// public
-	char	rx_buffer[16];
-	char	tx_buffer[256];
+	uint8_t		clkdiv;
 };
 
 /****************************** End Of Module ******************************/

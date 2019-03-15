@@ -7,6 +7,7 @@
 #include "driver.h"
 #include "tp.h"
 #include "spi.h"
+#include "uart.h"
 
 /*****************************    Defines    *******************************/
 
