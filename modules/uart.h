@@ -48,15 +48,21 @@ extern const struct UART_CLASS
 	void		(*del)(UART* this);
 
 	bool 		(*send)(UART* this, UART_TYPE type, uint8_t *data, uint8_t size);
-	bool		(*read)(UART* this, UART_TYPE addr);
+	bool		(*read)(UART* this, UART_FRAME* frame);
 } uart;
 
 /*****************************    Constructs   *****************************/
 
 enum UART_TYPE
 {
-	GET 	= 0x01,
-	SET 	= 0x02
+    CONNECT,
+    RAW,
+    GET,
+    SET,
+    ACK,
+    RESPONSE,
+    STREAM,
+    MSG
 };
 
 

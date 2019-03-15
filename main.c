@@ -22,6 +22,7 @@
 extern void tp_test(void);
 extern void chksum_test(void);
 extern void spi_test(void);
+extern void uart_test(void);
 
 /************************   Interrupt Handlers   ***************************/
 
@@ -46,9 +47,10 @@ int main(void)
     __enable_irq();
 
     // test methods
-	tp_test();
-	chksum_test();
-	spi_test();
+	// tp_test();
+	// chksum_test();
+	// spi_test();
+	uart_test();
 
 	// super-loop
 	for(;;)
