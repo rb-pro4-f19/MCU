@@ -47,7 +47,7 @@ extern const struct UART_CLASS
 	UART*		(*new)(uint8_t clkdiv);
 	void		(*del)(UART* this);
 
-	bool 		(*send)(UART* this, UART_TYPE type, uint8_t *data, uint8_t size);
+	void 		(*send)(UART* this, UART_TYPE type, uint8_t *data, uint8_t size);
 	bool		(*read)(UART* this, UART_FRAME* frame);
 } uart;
 

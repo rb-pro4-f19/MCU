@@ -54,6 +54,30 @@ int main(void)
 
 	printf("\n");
 
+	// 8-bit checksum test
+	// input:   1010'1011 ; 1000'1110
+	// size:    2 bytes (16 bits)
+	// output:  0010'0101
+
+	uint8_t  data_8bit2[3] = { 0b1110'0010, 'a', 'f' };
+	uint8_t	 chks_8bit2 = chksum.gen_8bit(data_8bit, 3);
+
+	printf("[8-bit checksum]\n\n");
+
+	printf("input:\n");
+	for (int i = 0; i < 3; i++)
+	{
+		printf_binary(data_8bit2[i]);
+	}
+
+	printf("\noutput:\n");
+	printf_binary(chks_8bit2);
+
+	printf("\nvalidation:\n");
+	printf("The cheksum is: %s\n", (vali_8bit) ? "valid" : "invalid");
+
+	printf("\n");
+
 	// stall
 	getchar();
 }

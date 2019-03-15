@@ -5,6 +5,8 @@
 #define NVIC_INT_CTRL_UNPEND_SYST 0x02000000  // Unpend a systick int
 #define SYSTICK_PRIORITY    0xE
 
+// #define __embedded__
+
 static bool irq_status;
 
 void __enable_irq(void)
