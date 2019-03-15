@@ -58,14 +58,14 @@ extern const struct UART_CLASS
 
 enum UART_TYPE
 {
-    CONNECT,
-    RAW,
-    GET,
-    SET,
-    ACK,
-    RESPONSE,
-    STREAM,
-    MSG
+    CONNECT		= 0x00,
+    RAW 			= 0x01,
+    GET 			= 0x02,
+    SET				= 0x03,
+    ACK				= 0x04,
+    RESPONSE	= 0x05,
+    STREAM		= 0x06,
+    MSG				= 0x07
 };
 
 
