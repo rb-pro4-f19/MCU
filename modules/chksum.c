@@ -15,7 +15,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "chksum2.h"
+#include "chksum.h"
 
 /*****************************    Defines    *******************************/
 
@@ -69,7 +69,7 @@ static uint8_t CHECKSUM_gen_4bit(uint16_t data, uint8_t num_of_nibbles)
 
 static bool CHECKSUM_val_4bit(uint16_t data, uint8_t num_of_nibbles, uint8_t checksum)
 {
-	return (chksum2.gen_4bit(data, num_of_nibbles) == checksum);
+	return (chksum.gen_4bit(data, num_of_nibbles) == checksum);
 }
 
 static uint8_t CHECKSUM_gen_8bit(uint8_t* data_array, uint8_t size)
@@ -92,7 +92,7 @@ static uint8_t CHECKSUM_gen_8bit(uint8_t* data_array, uint8_t size)
 
 static bool CHECKSUM_val_8bit(uint8_t* data_array, uint8_t size, uint8_t checksum)
 {
-	return (chksum2.gen_8bit(data_array, size) == checksum);
+	return (chksum.gen_8bit(data_array, size) == checksum);
 }
 
 static uint8_t _CHECKSUM_extract_nibble(uint16_t data, uint8_t pos)

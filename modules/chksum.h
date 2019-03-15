@@ -5,7 +5,7 @@
 * FILENAME...:	chksum.h
 * MODULENAME.:	CHECKSUM
 * API........:	https://goo.gl/cRHMYG
-* VERSION....:	1.2.1
+* VERSION....:	1.2.2
 *
 * DESCRIPTION:	4-bit and 8-bit BSD based checksum on variable length inputs.
 *

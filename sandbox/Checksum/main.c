@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 #include "checksum_prototype.h"
-#include "..\..\modules\chksum2.h"
+#include "..\..\modules\chksum.h"
 
 int main(void)
 {	
@@ -13,8 +13,8 @@ int main(void)
 	// output:  1000
 
 	uint16_t data_4bit		= 0b1011'1000'1110;
-	uint8_t  chks_4bit		= chksum2.gen_4bit(data_4bit, 3);
-	bool	 vali_4bit		= chksum2.val_4bit(data_4bit, 2, chks_4bit);
+	uint8_t  chks_4bit		= chksum.gen_4bit(data_4bit, 3);
+	bool	 vali_4bit		= chksum.val_4bit(data_4bit, 2, 0b1000);
 	
 	printf("[4-bit checksum]\n\n");
 
@@ -35,8 +35,8 @@ int main(void)
 	// output:  0010'0101
 
 	uint8_t  data_8bit[2]	= { 0b1010'1011, 0b1000'1110 };
-	uint8_t	 chks_8bit		= chksum2.gen_8bit(data_8bit, 2);
-	bool	 vali_8bit		= chksum2.val_8bit(data_8bit, 2, chks_8bit);
+	uint8_t	 chks_8bit		= chksum.gen_8bit(data_8bit, 2);
+	bool	 vali_8bit		= chksum.val_8bit(data_8bit, 2, 0b0010'0101);
 
 	printf("[8-bit checksum]\n\n");
 
