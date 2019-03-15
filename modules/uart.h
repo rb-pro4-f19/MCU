@@ -22,6 +22,9 @@
 
 #include "../tm4c123gh6pm.h"
 
+#include "chksum.h"
+#include "tp.h"
+
 /*****************************    Defines    *******************************/
 
 typedef struct  UART UART;
@@ -78,6 +81,7 @@ struct UART
 {
 	// public
 	uint8_t		clkdiv;
+	TIMEPOINT*	tp_timeout;
 };
 
 /****************************** End Of Module ******************************/

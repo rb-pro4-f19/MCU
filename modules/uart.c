@@ -17,8 +17,6 @@
 #include <malloc.h>
 
 #include "uart.h"
-#include "chksum.h"
-#include "tp.h"
 
 /*****************************    Defines    *******************************/
 #define MINIMALFRAMESIZE 3
@@ -68,6 +66,8 @@ static UART* UART_new(uint8_t clkdiv)
 
 	// initialize variables
 	this->clkdiv = clkdiv;
+	this->tp_timeout = tp.new();
+
 	_UART_init();	// Initiate UART0 module
 
 	// return pointer to instance
@@ -139,27 +139,24 @@ static void _UART_init()
 	// enable UART, RXE, TXE
 	UART0_CTL_R         |= ( 1 << 0 ) | ( 1 << 8 ) | ( 1 << 9 );
 
-
-    // delay function for 1ms should be here
-//    for(int i = 0; i < 10000000; i++);
 }
 
-static void UART_send(UART* this, UART_TYPE type, uint8_t *data, uint8_t size)
+static void UART_send(UART* this, UART_TYPE type, uint8_t* data, uint8_t size)
 /****************************************************************************
 *   Input    : this = pointer to a UART instance
 *   Function : Send a frame and will wait for a acknolendge or not
 ****************************************************************************/
 {
-	uint8_t tx_buffer[258];		// construct array max size (1 byte header + 256 byte data + 1 byte chksum)
+	uint8_t tx_buffer[258] = {0};		// construct array max size (1 byte header + 256 byte data + 1 byte chksum)
 
 	tx_buffer[0] = (type << 5) | (size << 0);		// insert hedaer
 
-	for(int i = 0; i < size + 1; i++)				// insert data / payload
+	for(int i = 0; i < size; i++)				// insert data / payload
 	{
 		tx_buffer[i + 1] = data[i];
 	}
 
-	tx_buffer[size + 2] = chksum.gen_8bit(tx_buffer, size);	// insert chksum
+	tx_buffer[size + 1] = chksum.gen_8bit(tx_buffer, size + 1);	// insert chksum
 
 	for(int i = 0; i < size + 2; i++)
 	{
@@ -177,11 +174,9 @@ static bool UART_read(UART* this, UART_FRAME* frame)
 	uint8_t rx_counter = 0;
 	uint8_t* rx_payload;
 	bool rx_success = false;
-	TIMEPOINT*	tp_timeout 	= tp.new();
-	uint8_t rx_header = 0;
 
 	// if rx_FIFO is empty
-	if(UART0_FR_R & (1 << 4))
+	if((UART0_FR_R & (1 << 4)))
 	{
 		return false;
 	}
@@ -192,7 +187,7 @@ static bool UART_read(UART* this, UART_FRAME* frame)
 		rx_buffer[i] = 0;
 	}
 
-	if(!_UART_recieve(rx_buffer[rx_counter++]))
+	if(!_UART_recieve(&rx_buffer[rx_counter++]))
 	{
 		return false;
 	}
@@ -200,12 +195,10 @@ static bool UART_read(UART* this, UART_FRAME* frame)
 	frame->type = (rx_buffer[0] & 0b11100000) >> 5;
 	frame->size = (rx_buffer[0] & 0b00011111) >> 0;
 
-
-
-	tp.set(tp_timeout, tp.now()); // start timer
+	tp.set(this->tp_timeout, tp.now()); // start timer
 
 	// +2 (1 byte header & 1 byte chksum)
-	while(tp.delta_now(tp_timeout, ms) < RX_TIMEOUT_MS && rx_counter < (frame->size + 2))
+	while(tp.delta_now(this->tp_timeout, ms) < RX_TIMEOUT_MS && rx_counter < (frame->size + 2))
 	{
 		// if rx_FIFO is empty
 		if (!(UART0_FR_R & (1 << 4)))
@@ -221,7 +214,7 @@ static bool UART_read(UART* this, UART_FRAME* frame)
 
 	rx_payload = &rx_buffer[1];
 	frame->payload = rx_payload;
-	frame->chksum = rx_buffer[(frame->size) + 2];
+	frame->chksum = rx_buffer[(frame->size) + 1];
 
 	// validate checksum | +1 1 byte header
 	if(!chksum.val_8bit(rx_buffer, frame->size + 1, frame->chksum))
