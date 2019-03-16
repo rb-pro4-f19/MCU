@@ -47,9 +47,9 @@ int main(void)
     __enable_irq();
 
     // test methods
-	// tp_test();
-	// chksum_test();
-	// spi_test();
+	//tp_test();
+	//chksum_test();
+	//spi_test();
 	uart_test();
 
 	// super-loop
