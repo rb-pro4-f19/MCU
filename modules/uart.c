@@ -19,13 +19,11 @@
 #include "uart.h"
 
 /*****************************    Defines    *******************************/
-#define MINIMALFRAMESIZE 3
-#define RX_TIMEOUT_MS 1000
 
 /*****************************   Constants   *******************************/
 
 #define SYSCLK 			16000000
-
+#define RX_TIMEOUT_MS 	1000
 
 /*****************************   Variables   *******************************/
 
@@ -34,12 +32,13 @@
 static UART*    UART_new(uint8_t clkdiv);
 static void		UART_del(UART* this);
 
-static void 	UART_send(UART* this, UART_TYPE type, uint8_t *data, uint8_t size);
-static bool		UART_read(UART* this, UART_FRAME* frame);
+static void 	UART_send(UART* this, UART_FRAME_TYPE type, uint8_t* payload, uint8_t payload_size);
+static bool		UART_read(UART* this, UART_FRAME* frame, bool send_ack);
 
 static void		_UART_init();
-static bool 	_UART_recieve(uint8_t * byte);
-static void		_UART_transmit(uint8_t data);
+static bool 	_UART_recieve(uint8_t* byte);
+static void		_UART_transmit(uint8_t byte);
+
 /****************************   Class Struct   *****************************/
 
 const struct UART_CLASS uart =
@@ -54,45 +53,33 @@ const struct UART_CLASS uart =
 /***********************   Constructive Functions   ************************/
 
 static UART* UART_new(uint8_t clkdiv)
-/****************************************************************************
-*   Input    : type = desired EXM_TYPE for the instance.
-			 : init_val = desired value for `var`.
-*   Output   : Pointer to a new EXAMPLE instance.
-*   Function : Constructor of a EXAMPLE instance.
-****************************************************************************/
 {
 	// allocate memory
 	UART* this = malloc(sizeof(UART));
 
 	// initialize variables
-	this->clkdiv = clkdiv;
-	this->tp_timeout = tp.new();
+	this->clkdiv 		= clkdiv;
+	this->baudrate 		= BAUD_9600; // temporary
+	this->tp_timeout 	= tp.new();
 
-	_UART_init();	// Initiate UART0 module
+	// initialize UART0 module
+	_UART_init();
 
 	// return pointer to instance
 	return this;
 }
 
 static void UART_del(UART* this)
-/****************************************************************************
-*   Input    : this = pointer to a EXAMPLE instance.
-*   Function : Destructor of a EXAMPLE instance.
-****************************************************************************/
 {
+	tp.del(this->tp_timeout);
 	free(this);
 }
 
 /*****************************   Functions   *******************************/
 
 static void _UART_init()
-/****************************************************************************
-*   Input    : this = pointer to a EXAMPLE instance.
-*   Function : Sets `is_set` of an EXAMPLE instance to false, such that
-*			   something interesting may happen. Maybe.
-****************************************************************************/
 {
-//// TX0 = PA0 and RX0 = PA1
+	//// TX0 = PA0 and RX0 = PA1
 
 	//// configure ports
 
@@ -141,64 +128,66 @@ static void _UART_init()
 
 }
 
-static void UART_send(UART* this, UART_TYPE type, uint8_t* data, uint8_t size)
-/****************************************************************************
-*   Input    : this = pointer to a UART instance
-*   Function : Send a frame and will wait for a acknolendge or not
-****************************************************************************/
+static void UART_send(UART* this, UART_FRAME_TYPE type, uint8_t* payload, uint8_t payload_size)
 {
-	uint8_t tx_buffer[258] = {0};		// construct array max size (1 byte header + 256 byte data + 1 byte chksum)
+	// construct array of max size:
+	// 1 byte header + 256 byte payload + 1 byte chksum
+	uint8_t tx_buffer[258] = {0};
 
-	tx_buffer[0] = (type << 5) | (size << 0);		// insert hedaer
+	// insert header
+	tx_buffer[0] = (type << 5) | (payload_size << 0);
 
-	for(int i = 0; i < size; i++)				// insert data / payload
+	// insert payload (offset by one due to header)
+	for (int i = 0; i < payload_size; i++)
 	{
-		tx_buffer[i + 1] = data[i];
+		tx_buffer[i + 1] = payload[i];
 	}
 
-	tx_buffer[size + 1] = chksum.gen_8bit(tx_buffer, size + 1);	// insert chksum
+	// insert 8-bit checksum after payload
+	// generated from (header + payload)
+	tx_buffer[payload_size + 1] = chksum.gen_8bit(tx_buffer, payload_size + 1);
 
-	for(int i = 0; i < size + 2; i++)
+	// transmit tx_frame
+	for (int i = 0; i < (payload_size + 2); i++)
 	{
-		_UART_transmit(tx_buffer[i]);			// transmit frame
+		_UART_transmit(tx_buffer[i]);
 	}
 }
 
-static bool UART_read(UART* this, UART_FRAME* frame)
-/****************************************************************************
-*   Input    : this = pointer to a UART instance
-*   Function : recieve a frame and check checksum
-****************************************************************************/
+static bool UART_read(UART* this, UART_FRAME* frame, bool send_ack)
 {
-	static uint8_t	rx_buffer[16];
-	uint8_t rx_counter = 0;
-	uint8_t* rx_payload;
-	bool rx_success = false;
-
-	// if rx_FIFO is empty
-	if((UART0_FR_R & (1 << 4)))
+	// check if RX FIFO has data
+	if ((UART0_FR_R & (1 << 4)))
 	{
 		return false;
 	}
 
+	// initialize variables
+	static uint8_t 	rx_buffer[16];
+	uint8_t 		rx_counter = 0;
+	bool 			rx_success = false;
+
 	// clear rx_buffer
-	for(int i = 0; i < 16; i++)
+	for (int i = 0; i < 16; i++)
 	{
 		rx_buffer[i] = 0;
 	}
 
-	if(!_UART_recieve(&rx_buffer[rx_counter++]))
+	// try reading header byte
+	if (!_UART_recieve(&rx_buffer[rx_counter++]))
 	{
 		return false;
 	}
 
-	frame->type = (rx_buffer[0] & 0b11100000) >> 5;
-	frame->size = (rx_buffer[0] & 0b00011111) >> 0;
+	// construct frame header
+	frame->type 		= (rx_buffer[0] & 0b11100000) >> 5;
+	frame->payload_size = (rx_buffer[0] & 0b00011111) >> 0;
 
-	tp.set(this->tp_timeout, tp.now()); // start timer
+	// start timeout timer
+	tp.set(this->tp_timeout, tp.now());
 
 	// +2 (1 byte header & 1 byte chksum)
-	while(tp.delta_now(this->tp_timeout, ms) < RX_TIMEOUT_MS && rx_counter < (frame->size + 2))
+	while (tp.delta_now(this->tp_timeout, ms) < RX_TIMEOUT_MS && rx_counter < (frame->payload_size + 2))
 	{
 		// if rx_FIFO is empty
 		if (!(UART0_FR_R & (1 << 4)))
@@ -207,19 +196,24 @@ static bool UART_read(UART* this, UART_FRAME* frame)
 		}
 	}
 
-	if(!rx_success)
+	// check that no errors occured
+	if (!rx_success) { return false; }
+
+	// construct frame payload and checksum
+	frame->payload	= &rx_buffer[1];
+	frame->chksum	= rx_buffer[frame->payload_size + 1];
+
+	// validate recieved checksum
+	// generated from (header + payload)
+	if (!chksum.val_8bit(rx_buffer, frame->payload_size + 1, frame->chksum))
 	{
 		return false;
 	}
 
-	rx_payload = &rx_buffer[1];
-	frame->payload = rx_payload;
-	frame->chksum = rx_buffer[(frame->size) + 1];
-
-	// validate checksum | +1 1 byte header
-	if(!chksum.val_8bit(rx_buffer, frame->size + 1, frame->chksum))
+	// send acknowledge with same data if required
+	if (send_ack)
 	{
-		return false;
+		uart.send(this, UART_ACK, frame->payload, frame->payload_size);
 	}
 
 	// everything is okay
@@ -227,30 +221,27 @@ static bool UART_read(UART* this, UART_FRAME* frame)
 }
 /*************************   Private Functions   ***************************/
 
-static void _UART_transmit(uint8_t data)
-/****************************************************************************
-*	Input    : data transmitting
-*   Function :
-****************************************************************************/
+static void _UART_transmit(uint8_t byte)
 {
-	while(UART0_FR_R & (1 << 5)); // while Tx_FIFO is full
-	UART0_DR_R = data;
+	// spinlock while transmission FIFO is full
+	while (UART0_FR_R & (1 << 5));
+
+	// send byte to FIFO
+	UART0_DR_R = byte;
 }
 
 static bool _UART_recieve(uint8_t* byte)
-/****************************************************************************
-*   Function : move recived data to rx_buffer
-****************************************************************************/
 {
+	// read byte from FIFO
 	uint32_t rx_data = UART0_DR_R;
 
-	// test for UART overrun, Break error, Parity Error and Framing Error
-	if(rx_data & (1 << 11) || rx_data & (1 << 10) || rx_data & (1 << 9) || rx_data & (1 << 8))
+	// test for UART overrun, break error, parity error and framing error
+	if (rx_data & (1 << 11) || rx_data & (1 << 10) || rx_data & (1 << 9) || rx_data & (1 << 8))
 	{
 		return false;
 	}
 
-	// write value to pointer
+	// write value to byte pointer
 	*byte = (uint8_t)rx_data;
 	return true;
 }
