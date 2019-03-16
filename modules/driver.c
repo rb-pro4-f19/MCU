@@ -5,13 +5,11 @@
 #define NVIC_INT_CTRL_UNPEND_SYST 0x02000000  // Unpend a systick int
 #define SYSTICK_PRIORITY    0xE
 
-#define __embedded__
-
 static bool irq_status;
 
 void __enable_irq(void)
 {
-#ifdef __embedded__
+#ifndef _MSC_VER
 	// enable global interrupts using ASM
 	asm volatile
 	(
@@ -27,7 +25,7 @@ void __enable_irq(void)
 
 bool __disable_irq(void)
 {
-#ifdef __embedded__
+#ifndef _MSC_VER
 	// return false if interrupts are already disabled
 	if (!irq_status) return false;
 
@@ -57,7 +55,7 @@ static int set_systick_reload_value(uint32_t tick_period)
 
 void sys_tick_init(uint32_t tick_period)
 {
-#ifdef __embedded__
+#ifndef _MSC_VER
 	// Note flag is cleared by reading the STRCTL or writing CTCURRENT Register
 	NVIC_ST_CTRL_R &=  ~(NVIC_ST_CTRL_ENABLE);
 	// calculate (200 ms / 62.5 ns)-1 = 0x30D3FF
