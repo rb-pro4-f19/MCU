@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+
+  <!-- Automatically add files from modules directory. -->
+  <ItemGroup>
+    <ClInclude Include="..\..\modules\*.h" />
+    <ClCompile Include="..\..\modules\*.c" />
+  </ItemGroup>
+
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -17,18 +25,6 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\modules\chksum.c" />
-    <ClCompile Include="..\..\modules\driver.c" />
-    <ClCompile Include="..\..\modules\spi.c" />
-    <ClCompile Include="..\..\modules\tp.c" />
-    <ClInclude Include="..\..\modules\chksum.h" />
-    <ClInclude Include="..\..\modules\driver.h" />
-    <ClInclude Include="..\..\modules\emp_type.h" />
-    <ClInclude Include="..\..\modules\spi.h" />
-    <ClInclude Include="..\..\modules\tp.h" />
-    <ClInclude Include="..\..\modules\uart.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
