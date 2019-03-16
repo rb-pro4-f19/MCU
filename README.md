@@ -31,7 +31,7 @@ The MCU has is comprised of various modules, each with a specific purpose.
 | EXCHDLR    | `exchdlr.h`  | Exception handling with `assert()` & `require()` methods.        |
 | TIMEPOINT  | [`tp.h`]     | Time tracking, duration calculation etc.                         |
 | CHECKSUM   | [`chksum.h`] | Static checksum method collection.                               |
-| UART       | `uart.h`     | UART communication with telegram protocol.                       |
+| UART       | [`uart.h`]   | UART communication with telegram protocol.                       |
 | SPI        | [`spi.h`]    | SPI communication with telegram protocol.                        |
 | CLI        | `cli.h`      | Command interpretation, console logging.                         |
 | CONTROLLER | `ctrl.h`     | Controller data struct with previous data, desired position etc. |
@@ -46,7 +46,7 @@ The MCU has is comprised of various modules, each with a specific purpose.
 [`exchdlr.h`]: #modules
 [`tp.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/tp.h
 [`chksum.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/chksum.h
-[`uart.h`]: #modules
+[`uart.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/uart.h
 [`spi.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/spi.h
 [`cli.h`]: #modules
 [`ctrl.h`]: #modules
