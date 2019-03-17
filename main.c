@@ -2,12 +2,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define __embedded__
-
 #include "driver.h"
 #include "tp.h"
 #include "spi.h"
 #include "uart.h"
+#include "cli.h"
 
 /*****************************    Defines    *******************************/
 
@@ -23,39 +22,62 @@ extern void tp_test(void);
 extern void chksum_test(void);
 extern void spi_test(void);
 extern void uart_test(void);
+extern void cli_test(void);
 
 /************************   Interrupt Handlers   ***************************/
 
 void ISR_SYSTICK(void)
 {
-    tp.systick();
+	tp.systick();
 }
 
 /*******************************   Main   **********************************/
 
+void echo()
+{
+	cli.log("Got a frame, echoing back.");
+}
+
 int main(void)
 {
 
-    // disable interrupts
-    __disable_irq();
+	// disable interrupts
+	__disable_irq();
 
-    // init SYSTICK
-    sys_tick_init(SYSTICK_DUR_MS);
-    tp.init_systick(SYSTICK_DUR_MS, ms);
+	// init SysTick
+	sys_tick_init(SYSTICK_DUR_MS);
+	tp.init_systick(SYSTICK_DUR_MS, ms);
 
-    // enable interrupts
-    __enable_irq();
+	// init UART and assign to CLI
+	UART* uart1 = uart.new(2);
+	cli.uart_module = uart1;
 
-    // test methods
-	//tp_test();
-	//chksum_test();
-	//spi_test();
-	uart_test();
+	// init commands
+	// max 8 types and 8 actions per type (#defined in cli.h)
+	CMD_TABLE
+	{
+		{ UART_GET, {
+			{ 0x00, &echo },        // echo
+			{ 0x01, NULL }          // n/a
+		}},
+
+		{ UART_SET, {
+			{ 0x00, NULL },         // n/a
+			{ 0x01, NULL }          // n/a
+		}}
+	};
+
+	// enable interrupts
+	__enable_irq();
 
 	// super-loop
 	for(;;)
 	{
-		for (int i = 0; i < 1000; i++);
+		// check incoming commands
+		cli.check();
+
+		// sleep a little bit
+		for(int i = 0; i < 1000; i++);
 	}
 
 	return 0;
