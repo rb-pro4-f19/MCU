@@ -33,7 +33,7 @@ The MCU has is comprised of various modules, each with a specific purpose.
 | CHECKSUM   | [`chksum.h`] | Static checksum method collection.                               |
 | UART       | [`uart.h`]   | UART communication with telegram protocol.                       |
 | SPI        | [`spi.h`]    | SPI communication with telegram protocol.                        |
-| CLI        | `cli.h`      | Command interpretation, console logging.                         |
+| CLI        | [`cli.h`]    | Command interpretation, console logging.                         |
 | CONTROLLER | `ctrl.h`     | Controller data struct with previous data, desired position etc. |
 | JOYSTICK   | `joystk.h`   | Joystick driver with kinematic mapping.                          |
 | MOTOR      | `dcmotor.h`  | DC Motor interface with encoder, PWM etc.                        |
@@ -48,7 +48,7 @@ The MCU has is comprised of various modules, each with a specific purpose.
 [`chksum.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/chksum.h
 [`uart.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/uart.h
 [`spi.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/spi.h
-[`cli.h`]: #modules
+[`cli.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/cli.h
 [`ctrl.h`]: #modules
 [`joystk.h`]: #modules
 [`dcmotor.h`]: #modules
