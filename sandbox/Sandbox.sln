@@ -17,6 +17,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CArray", "CArray\CArray.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UART", "UART\UART.vcxproj", "{741A50DF-87A9-49DB-8B04-CE8D2219795A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "C CLI", "C CLI\C CLI.vcxproj", "{C487FE7D-0047-4E14-8210-F21770B6C004}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -81,6 +83,14 @@ Global
 		{741A50DF-87A9-49DB-8B04-CE8D2219795A}.Release|x64.Build.0 = Release|x64
 		{741A50DF-87A9-49DB-8B04-CE8D2219795A}.Release|x86.ActiveCfg = Release|Win32
 		{741A50DF-87A9-49DB-8B04-CE8D2219795A}.Release|x86.Build.0 = Release|Win32
+		{C487FE7D-0047-4E14-8210-F21770B6C004}.Debug|x64.ActiveCfg = Debug|x64
+		{C487FE7D-0047-4E14-8210-F21770B6C004}.Debug|x64.Build.0 = Debug|x64
+		{C487FE7D-0047-4E14-8210-F21770B6C004}.Debug|x86.ActiveCfg = Debug|Win32
+		{C487FE7D-0047-4E14-8210-F21770B6C004}.Debug|x86.Build.0 = Debug|Win32
+		{C487FE7D-0047-4E14-8210-F21770B6C004}.Release|x64.ActiveCfg = Release|x64
+		{C487FE7D-0047-4E14-8210-F21770B6C004}.Release|x64.Build.0 = Release|x64
+		{C487FE7D-0047-4E14-8210-F21770B6C004}.Release|x86.ActiveCfg = Release|Win32
+		{C487FE7D-0047-4E14-8210-F21770B6C004}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
