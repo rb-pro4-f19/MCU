@@ -29,15 +29,20 @@
 
 /************************  Function Declarations ***************************/
 
-static UART*    UART_new(uint8_t clkdiv);
-static void		UART_del(UART* this);
+static UART*		UART_new(UART_BAUDRATE baudrate);
+static void			UART_del(UART* this);
 
-static void 	UART_send(UART* this, UART_FRAME_TYPE type, uint8_t* payload, uint8_t payload_size);
-static bool		UART_read(UART* this, UART_FRAME* frame, bool send_ack);
+static UART_FRAME*	UART_newframe(void);
+static void 		UART_delframe(UART_FRAME* this);
 
-static void		_UART_init();
-static bool 	_UART_recieve(uint8_t* byte);
-static void		_UART_transmit(uint8_t byte);
+static void 		UART_send(UART* this, UART_FRAME_TYPE type, uint8_t* payload, uint8_t payload_size);
+static bool			UART_read(UART* this, UART_FRAME* frame, bool send_ack);
+
+static void			_UART_init();
+static void 		_UART_setbaudrate(UART_BAUDRATE baudrate);
+
+static bool 		_UART_recieve(uint8_t* byte);
+static void			_UART_transmit(uint8_t byte);
 
 /****************************   Class Struct   *****************************/
 
@@ -46,24 +51,26 @@ const struct UART_CLASS uart =
 	.new			= &UART_new,
 	.del			= &UART_del,
 
+	.newframe		= &UART_newframe,
+	.delframe		= &UART_delframe,
+
 	.send			= &UART_send,
 	.read			= &UART_read
 };
 
 /***********************   Constructive Functions   ************************/
 
-static UART* UART_new(uint8_t clkdiv)
+static UART* UART_new(UART_BAUDRATE baudrate)
 {
 	// allocate memory
 	UART* this = malloc(sizeof(UART));
 
 	// initialize variables
-	this->clkdiv 		= clkdiv;
-	this->baudrate 		= BAUD_9600; // temporary
+	this->baudrate 		= baudrate; // temporary
 	this->tp_timeout 	= tp.new();
 
 	// initialize UART0 module
-	_UART_init();
+	_UART_init(baudrate);
 
 	// return pointer to instance
 	return this;
@@ -75,9 +82,26 @@ static void UART_del(UART* this)
 	free(this);
 }
 
+static UART_FRAME*	UART_newframe()
+{
+	// allocate memory
+	UART_FRAME* this = malloc(sizeof(UART_FRAME));
+
+	// construct empty frame
+	this->type = 0;
+	this->payload_size = 0;
+	this->payload = (uint8_t[14]) { 0 };
+	this->chksum = 0;
+	return this;
+}
+
+static void UART_delframe(UART_FRAME* this)
+{
+	free(this);
+}
 /*****************************   Functions   *******************************/
 
-static void _UART_init()
+static void _UART_init(UART_BAUDRATE baudrate)
 {
 	//// TX0 = PA0 and RX0 = PA1
 
@@ -109,13 +133,7 @@ static void _UART_init()
 	// disable UART
     UART0_CTL_R         = 0;
 
-	// eq: uartclk / (16 * Baudrate) = BRD (Baud rate Divisor)
-	// 16 000 000 / (16 * 10 000 000) = 0.1
-
-    UART0_IBRD_R        |= 104;
-
-    // 0.1 * 64 + 0.5 = 7
-    UART0_FBRD_R        |= 11;
+	_UART_setbaudrate(baudrate);
 
 	//  WLEN IS 8 bit, FIFO mode, 1 stop bit - no parity
 	UART0_LCRH_R        =  ( 0x3 << 5) | (1 << 4);
@@ -220,6 +238,50 @@ static bool UART_read(UART* this, UART_FRAME* frame, bool send_ack)
 	return true;
 }
 /*************************   Private Functions   ***************************/
+
+static void _UART_setbaudrate(UART_BAUDRATE baudrate)
+{
+	switch (baudrate) {
+		case BAUD_1200:
+		{
+			// eq: uartclk / (16 * Baudrate) = BRD (Baud rate Divisor)
+			UART0_IBRD_R        |= 833;
+
+			// decimal * 64 + 0.5 = (baud rate divisor frac)
+			UART0_FBRD_R        |= 22;
+
+			break;
+		}
+		case BAUD_9600:
+		{
+			// eq: uartclk / (16 * Baudrate) = BRD (Baud rate Divisor)
+			UART0_IBRD_R        |= 104;
+
+			// decimal * 64 + 0.5 = (baud rate divisor frac)
+			UART0_FBRD_R        |= 11;
+			break;
+		}
+		case BAUD_14400:
+		{
+			// eq: uartclk / (16 * Baudrate) = BRD (Baud rate Divisor)
+			UART0_IBRD_R        |= 69;
+
+			// decimal * 64 + 0.5 = (baud rate divisor frac)
+			UART0_FBRD_R        |= 29;
+			break;
+		}
+		case BAUD_115200:
+		{
+			// eq: uartclk / (16 * Baudrate) = BRD (Baud rate Divisor)
+			UART0_IBRD_R        |= 8;
+
+			// decimal * 64 + 0.5 = (baud rate divisor frac)
+			UART0_FBRD_R        |= 44;
+
+			break;
+		}
+	}
+}
 
 static void _UART_transmit(uint8_t byte)
 {
