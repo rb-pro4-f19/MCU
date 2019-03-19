@@ -52,6 +52,21 @@ int main(void)
 	UART* uart1 = uart.new(2);
 	cli.uart_module = uart1;
 
+	// init SPI
+	SPI* spi_test = spi.new(2);
+
+	while(1)
+	{
+		spi.send(spi_test, PWM1, 110);
+		for (int i = 0; i < 1000000; i++);
+		spi.send(spi_test, PWM2, 126);
+		for (int i = 0; i < 1000000; i++);
+		spi.send(spi_test, PWM2, 10);
+		for (int i = 0; i < 1000000; i++);
+		spi.send(spi_test, PWM2, 200);
+		for (int i = 0; i < 1000000; i++);
+	}
+
 	// init commands
 	// max 8 types and 8 actions per type (#defined in cli.h)
 	CMD_TABLE
