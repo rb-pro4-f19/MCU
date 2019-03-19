@@ -29,15 +29,16 @@
 #define SSI0_CR0_FRF	4
 #define SSI0_CR0_DSS	0
 
+#define FRAME_EMPTY		(SPI_FRAME){0, 0, 0}
+#define FRAME_ERROR		(SPI_FRAME){1, 0, 0}
+#define FRAME_DATA(x)	(((x.addr << 8) | x.data) & 0x0FFF)
+
 /*****************************   Constants   *******************************/
 
 #define SYSCLK 			16000000
 
 #define RX_MAX_ATTEMPTS	3
 #define RX_TIMEOUT_MS	50
-
-#define FRAME_EMPTY		(SPI_FRAME){0, 0, 0}
-#define FRAME_ERROR		(SPI_FRAME){1, 0, 0}
 
 /*****************************   Variables   *******************************/
 
@@ -152,19 +153,25 @@ static bool SPI_send(SPI* this, SPI_ADDR addr, uint8_t data)
 ****************************************************************************/
 {
 	// construct frame & generate checksum
+	// checksum is generated from 12 bits (addr & data), e.g. 0000|addr|dataxxxx
 	SPI_FRAME frm_send = { addr, data, 0 };
-	frm_send.chksum = chksum.gen_4bit(((frm_send.addr << 12) | (frm_send.data << 4)) & 0xFFF0, 3);
+	//frm_send.chksum = chksum.gen_4bit(((frm_send.addr << 8) | frm_send.data) & 0x0FFF, 3);
+	frm_send.chksum = chksum.gen_4bit(FRAME_DATA(frm_send), 3);
 
 	// transmit frame
 	_SPI_transmit(&frm_send, true);
 
-	// check for acknowledge
+	// try receiving acknowledge
 	SPI_FRAME frm_recived = _SPI_recieve();
-	if (chksum.val_4bit(((frm_recived.addr << 12) | (frm_recived.data << 4)) & 0xFFF0, 3, frm_recived.chksum))
+
+	// validate checksum
+	if (!chksum.val_4bit(FRAME_DATA(frm_send), 3, frm_recived.chksum))
 	{
-		return true;
+		return false;
 	}
-	return false;
+
+	// everything okay
+	return true;
 }
 
 static bool SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer)
@@ -175,7 +182,7 @@ static bool SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer)
 {
 	// construct frame and generate checksum
 	SPI_FRAME frm_request	= { addr, 0, 0 };
-	frm_request.chksum = chksum.gen_4bit(((frm_request.addr << 12) | (frm_request.data << 4)) & 0xFFF0, 3);
+	frm_request.chksum = chksum.gen_4bit(FRAME_DATA(frm_request), 3);
 
 	// attempt to send request and get response
 	for (int i = 0; i < RX_MAX_ATTEMPTS; i++)
@@ -187,16 +194,16 @@ static bool SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer)
 		SPI_FRAME frm_response = _SPI_recieve();
 
 		// validate recieved frame and return 12 bit data
-		if(chksum.val_4bit(((frm_response.addr << 12) | (frm_response.data << 4)) & 0xFFF0, 3, frm_response.chksum))
+		if(chksum.val_4bit(FRAME_DATA(frm_request), 3, frm_response.chksum))
 		{
-			*buffer = ((frm_response.data << 0) | (frm_response.addr << 8));
+			*buffer = FRAME_DATA(frm_request);
 			return true;
 		}
-		return false;
 	}
 
 	// force error, since no data was recieved
 	//assert(0);
+	return false;
 
 	// maybe return data via buffer* as argument and return bool on
 	// whether function succeeded or not?
@@ -210,7 +217,7 @@ static void _SPI_transmit(SPI_FRAME* frame, bool spinlock)
 *   Function :
 ****************************************************************************/
 {
-	SSI0_DR_R = (frame->addr << 12) | (frame->data << 4) |(frame->chksum << 0);
+	SSI0_DR_R = (frame->addr << 12) | (frame->data << 4) | (frame->chksum << 0);
 	while(spinlock && ((SSI0_SR_R & (1 << 0)) == 0));
 }
 
@@ -224,6 +231,10 @@ static SPI_FRAME _SPI_recieve(void)
 
 	// wait until FIFO register full or timedout passed
 	while((SSI0_SR_R & (1 << 3)) == 0 && tp.delta_now(tp_timeout, ms) < RX_TIMEOUT_MS);
+
+	// cleanup TIMEPOINT
+	// should be moved to be part of struct
+	tp.del(tp_timeout);
 
 	// return frame from MISO register if any data
 	if((SSI0_SR_R & (1 << 3)) == 0)

@@ -5,7 +5,7 @@
 * FILENAME...:	spi.h
 * MODULENAME.:	SPI
 * API........:	https://goo.gl/HVfyDq
-* VERSION....:	1.0.2
+* VERSION....:	1.0.3
 *
 * DESCRIPTION:	An example module. This might have a lengthy description, in
 *				which case, we simply add some tabs.
@@ -71,9 +71,9 @@ enum SPI_FRMPART
 
 struct SPI_FRAME
 {
-	uint8_t addr : 4;
-	uint8_t data : 8;
-	uint8_t chksum : 4;
+	uint8_t addr 	: 4;
+	uint8_t data 	: 8;
+	uint8_t chksum 	: 4;
 };
 
 struct SPI
