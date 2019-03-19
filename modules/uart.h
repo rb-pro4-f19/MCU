@@ -5,7 +5,7 @@
 * FILENAME...:	uart.h
 * MODULENAME.:	UART
 * API........:	https://goo.gl/pBQsgZ
-* VERSION....:	1.0.1
+* VERSION....:	1.1.0
 *
 * DESCRIPTION:	UART serial communication module.
 *
@@ -39,11 +39,11 @@ typedef enum    UART_BAUDRATE UART_BAUDRATE;
 
 extern const struct UART_CLASS
 {
-	UART*		(*new)(uint8_t clkdiv);
+	UART*		(*new)(UART_BAUDRATE baudrate);
 	void		(*del)(UART* this);
 
-	UART_FRAME*	(*new_frame)();
-	void 		(*del_frame)(UART_FRAME* frame);
+	UART_FRAME*	(*newframe)();
+	void 		(*delframe)(UART_FRAME* frame);
 
 	void 		(*send)(UART* this, UART_FRAME_TYPE type, uint8_t* payload, uint8_t payload_size);
 	bool		(*read)(UART* this, UART_FRAME* frame, bool send_ack);
@@ -55,6 +55,8 @@ enum UART_BAUDRATE
 {
 	BAUD_1200		= 0,
 	BAUD_9600		= 1,
+	BAUD_14400		= 2,
+	BAUD_115200		= 3
 };
 
 enum UART_FRAME_TYPE
@@ -79,7 +81,6 @@ struct UART_FRAME
 
 struct UART
 {
-	uint8_t			clkdiv;
 	UART_BAUDRATE	baudrate;
 	TIMEPOINT*		tp_timeout;
 };
