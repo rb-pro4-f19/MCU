@@ -1,4 +1,4 @@
-# TIMEPOINT Module (`tp.h`)
+# TIMEPOINT Module
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque congue feugiat ipsum vitae bibendum. Etiam ornare ligula sit amet dolor dignissim porttitor. Aliquam mattis, lorem et pharetra aliquam, sapien tellus tempor orci, malesuada aliquet ipsum felis et lacus.
 
 ---
@@ -30,7 +30,7 @@ TIMEPOINT* tp_test3 = tp.new();
 
 // manually read value of a TIMEPOINT
 // DONT'T WRITE TO IT!
-uint32_t tp_test1_minutes = tp_test1->time_array[m];
+uint16_t tp_test1_minutes = tp_test1->time_array[m];
 
 // set tp_test1 to current (global) time (value of SYSTICK)
 tp.set(tp_test1, tp.now());
@@ -55,7 +55,6 @@ Text.
 ## Changelog
 
 ### [Unreleased]
----
 
 #### Known Issues
 - Maximum `systick_dur_us` is ~65 μs, with no error checking on init.
@@ -63,12 +62,13 @@ Text.
 <!-- #### Todo
 - Item. -->
 
+---
+
 <!-- ----------------------------------------------------------------------------------------- -->
 
 ### [1.2.0] - 2019-03-20
----
 
-### Added
+#### Added
 - `.convert_us()` method.
 - `.reset()` method (memset).
 - Support for minutes and hours; reset after 24 hours.
@@ -84,10 +84,11 @@ Text.
 #### Fixed
 - No indexing error after 17 minutes; added automatic reset.
 
+---
+
 <!-- ----------------------------------------------------------------------------------------- -->
 
 ### [1.1.0] - 2019-03-14
----
 
 #### Added
 - `.delta_now()` method.
@@ -106,10 +107,11 @@ Text.
 - Removed callback.
 - `TP_TYPE` (all timepoint instances are now NORMAL).
 
+---
+
 <!-- ----------------------------------------------------------------------------------------- -->
 
 ### [1.0.0] - 2017-03-05
----
 
 #### Added
 - Created module.
