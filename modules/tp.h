@@ -4,8 +4,8 @@
 *
 * FILENAME...:	tp.h
 * MODULENAME.:	TIMEPOINT
-* API........:	https://goo.gl/Z2FV18
-* VERSION....:	1.2.0
+* DOCS.......:	https://github.com/rb-pro4-f19/MCU/blob/master/docs/TIMEPOINT.md
+* VERSION....:	1.2.1
 *
 * DESCRIPTION:	Timepoint is an instance used for tracking time, including
 				calculating delta, delta_systick etc.
@@ -45,7 +45,7 @@ extern const struct TIMEPOINT_CLASS
 
 	// methods
 	void		(*systick)(void);
-	void 		(*init_systick)(uint32_t duration_us, TP_UNIT unit);
+	void 		(*init_systick)(uint16_t duration, TP_UNIT unit);
 
 	void		(*reset)(TIMEPOINT* this);
 	void 		(*inc)(TIMEPOINT* this, uint32_t value, TP_UNIT unit);

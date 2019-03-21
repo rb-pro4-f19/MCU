@@ -35,7 +35,7 @@ static TIMEPOINT*	TIMEPOINT_new(void);
 static void 		TIMEPOINT_del(TIMEPOINT* this);
 
 static void 		TIMEPOINT_systick(void);
-static void 		TIMEPOINT_init_systick(uint32_t duration_us, TP_UNIT unit);
+static void 		TIMEPOINT_init_systick(uint16_t duration, TP_UNIT unit);
 
 static void 		TIMEPOINT_reset(TIMEPOINT* this);
 static inline void 	TIMEPOINT_increment(TIMEPOINT* this, uint32_t value, TP_UNIT unit);
@@ -118,14 +118,14 @@ static void TIMEPOINT_systick(void)
 	tp.inc(tp_sys, systick_dur_us, us);
 }
 
-static void TIMEPOINT_init_systick(uint32_t duration_us, TP_UNIT unit)
+static void TIMEPOINT_init_systick(uint32_t duration, TP_UNIT unit)
 /****************************************************************************
 *   Input    : Pointer to TIMEPOINT instance.
 *   Function : Increment TIMEPOINT with a systick unit.
 ****************************************************************************/
 {
 	tp_sys 			= tp.new();
-	systick_dur_us	= duration_us * pow(10, 3 * unit);
+	systick_dur_us	= duration * pow(10, 3 * unit);
 }
 
 static inline void TIMEPOINT_increment(TIMEPOINT* this, uint32_t value, TP_UNIT unit)
