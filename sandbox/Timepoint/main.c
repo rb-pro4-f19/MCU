@@ -1,17 +1,19 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include <time.h>
+
 #include "../../modules/tp.h"
 
 void printstuff(TIMEPOINT* tp)
 {
-	printf("s: %03llu | ms: %03llu | us: %03llu | ns: %03llu \n", tp->time_array[s], tp->time_array[ms], tp->time_array[us], tp->time_array[ns]);
+	printf("h: %02u | m: %02u | s: %02u | ms: %03u | us: %03u \n", tp->time_array[h], tp->time_array[m], tp->time_array[s], tp->time_array[ms], tp->time_array[us]);
 }
 
 int main(void)
 {
 	// initialize systick to 200ns per systick
-	tp.init_systick(200, ns);
+	tp.init_systick(1, ms);
 
 	// call this only from the SYSTICK ISR
 	tp.systick();
@@ -20,6 +22,10 @@ int main(void)
 	TIMEPOINT* tp_test1 = tp.new();
 	TIMEPOINT* tp_test2 = tp.new();
 	TIMEPOINT* tp_test3 = tp.new();
+
+	// manually read value of a TIMEPOINT
+	// DONT'T WRITE TO IT!
+	uint16_t tp_test1_minutes = tp_test1->time_array[m];
 	
 	// set tp_test1 to current (global) time (value of SYSTICK)
 	tp.set(tp_test1, tp.now());

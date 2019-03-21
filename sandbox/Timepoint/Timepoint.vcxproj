@@ -115,11 +115,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\modules\tp.c" />
     <ClCompile Include="main.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\modules\tp.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\References\References.vcxproj">
