@@ -38,8 +38,8 @@ static void 		UART_delframe(UART_FRAME* this);
 static void 		UART_send(UART* this, UART_FRAME_TYPE type, uint8_t* payload, uint8_t payload_size);
 static bool			UART_read(UART* this, UART_FRAME* frame, bool send_ack);
 
-static void			_UART_init();
-static void 		_UART_setbaudrate(UART_BAUDRATE baudrate);
+static void 		_UART_init(UART_BAUDRATE baudrate);
+static void 		_UART_set_baudrate(UART_BAUDRATE baudrate);
 
 static bool 		_UART_recieve(uint8_t* byte);
 static void			_UART_transmit(uint8_t byte);
@@ -92,6 +92,7 @@ static UART_FRAME*	UART_newframe()
 	this->payload_size = 0;
 	this->payload = (uint8_t[14]) { 0 };
 	this->chksum = 0;
+
 	return this;
 }
 
@@ -133,7 +134,8 @@ static void _UART_init(UART_BAUDRATE baudrate)
 	// disable UART
     UART0_CTL_R         = 0;
 
-	_UART_setbaudrate(baudrate);
+	// set baudrate
+    _UART_set_baudrate(baudrate);
 
 	//  WLEN IS 8 bit, FIFO mode, 1 stop bit - no parity
 	UART0_LCRH_R        =  ( 0x3 << 5) | (1 << 4);
@@ -239,7 +241,7 @@ static bool UART_read(UART* this, UART_FRAME* frame, bool send_ack)
 }
 /*************************   Private Functions   ***************************/
 
-static void _UART_setbaudrate(UART_BAUDRATE baudrate)
+static void _UART_set_baudrate(UART_BAUDRATE baudrate)
 {
 	switch (baudrate) {
 		case BAUD_1200:
