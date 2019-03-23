@@ -4,8 +4,8 @@
 *
 * FILENAME...:	spi.h
 * MODULENAME.:	SPI
-* API........:	https://goo.gl/HVfyDq
-* VERSION....:	1.0.4
+* DOCS.......:	https://git.io/fjJa2
+* VERSION....:	1.1.1
 *
 * DESCRIPTION:	An example module. This might have a lengthy description, in
 *				which case, we simply add some tabs.
@@ -34,9 +34,6 @@ typedef enum    SPI_FRMPART SPI_FRMPART;
 
 /*****************************   Constants   *******************************/
 
-#define	EXM_ARRAY_SIZE 8
-
-
 /*************************    Class Functions    ***************************/
 
 extern const struct SPI_CLASS
@@ -59,8 +56,8 @@ enum SPI_ADDR
 	ENC2 	= 0b0100,
 	HAL1 	= 0b0101,
 	HAL2 	= 0b0110,
-	AMP1 	= 0b0111,
-	AMP2 	= 0b1000
+	CUR1 	= 0b0111,
+	CUR2 	= 0b1000
 };
 
 enum SPI_FRMPART

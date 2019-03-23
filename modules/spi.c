@@ -204,11 +204,7 @@ static bool SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer)
 	}
 
 	// force error, since no data was recieved
-	//assert(0);
 	return false;
-
-	// maybe return data via buffer* as argument and return bool on
-	// whether function succeeded or not?
 }
 
 /*************************   Private Functions   ***************************/
@@ -225,8 +221,6 @@ static void _SPI_transmit(SPI_FRAME* frame, bool spinlock)
 
 static SPI_FRAME _SPI_recieve(SPI* this)
 {
-
-
 	// transmit empty frame and start timeout timer
 	_SPI_transmit(&FRAME_EMPTY, false);
 	tp.set(this->tp_timeout, tp.now());
@@ -234,25 +228,21 @@ static SPI_FRAME _SPI_recieve(SPI* this)
 	// wait until FIFO register full or timedout passed
 	while((SSI0_SR_R & (1 << 3)) == 0 && tp.delta_now(this->tp_timeout, ms) < RX_TIMEOUT_MS);
 
-	// return frame from MISO register if any data
-	// HUGE BUG!!!!!
-	// !!!!! ... chehcking for 0??
-	if((SSI0_SR_R & (1 << 3)) == 0)
-	{
-		volatile uint32_t rx_data;
-		rx_data = SSI0_DR_R;
-
-		return (SPI_FRAME){
-			(rx_data >> 12),
-			(rx_data >> 4 & 0x00FF),
-			(rx_data & 0x000F)
-		};
-	}
-	// return error frame
-	else
+	// check if MISO buffer has data; RFF bit != 0.
+	if(SSI0_SR_R & (1 << 3) == 0)
 	{
 		return FRAME_ERROR;
 	}
+
+	// read from register
+	uint16_t rx_data = (uint16_t)SSI0_DR_R;
+
+	// construct and return frame
+	return (SPI_FRAME){
+		(rx_data >> 12),
+		(rx_data >> 4 & 0x00FF),
+		(rx_data & 0x000F)
+	};
 }
 
 /****************************** End Of Module ******************************/
