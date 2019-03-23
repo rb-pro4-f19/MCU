@@ -4,8 +4,8 @@
 *
 * FILENAME...:	cli.h
 * MODULENAME.:	CLI (static class)
-* API........:	https://goo.gl/SNFCsG
-* VERSION....:	1.0.0
+* DOCS.......:	https://git.io/fjJau
+* VERSION....:	1.1.0
 *
 * DESCRIPTION:	Interaction with computer CLI using UART, including message
 				logging (send)  and command parsing (receieve).
@@ -36,6 +36,7 @@ typedef struct	UART_FRAME		UART_FRAME;
 typedef enum	UART_FRAME_TYPE	UART_FRAME_TYPE;
 
 #define			CMD_TABLE		cli.commands = (CLI_TYPE[CLI_MAX_TYPES])
+#define 		CLI_LAMBDA(_x)	({ void _func(const uint8_t * args) _x _func; })
 
 /***********************     External Variables     ************************/
 
@@ -62,7 +63,8 @@ extern struct CLI_CLASS
 
 	void(* const init)(CLI_TYPE* commands, UART* uart_module); // optional
 	void(* const check)(void);
-	void(* const log)(const char* msg);
+	void(* const log)(const char* str);
+	void(* const logf)(const char* str, ...);
 	void(* const parse_frame)(UART_FRAME* frame);
 } cli;
 
