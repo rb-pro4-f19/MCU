@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <stdio.h>
+
 #include "driver.h"
 #include "tp.h"
 #include "spi.h"
@@ -33,7 +35,7 @@ void ISR_SYSTICK(void)
 
 /*******************************   Main   **********************************/
 
-void echo()
+void echo(const uint8_t* payload)
 {
 	cli.log("Got a frame, echoing back.");
 }
@@ -49,22 +51,32 @@ int main(void)
 	tp.init_systick(SYSTICK_DUR_MS, ms);
 
 	// init UART and assign to CLI
-	UART* uart1 = uart.new(2);
+	UART* uart1 = uart.new(BAUD_9600);
 	cli.uart_module = uart1;
 
 	// init SPI
 	SPI* spi_test = spi.new(2);
 
-	while(1)
+	// set pwm callback
+	void set_pwm(const uint8_t* payload)
 	{
-		spi.send(spi_test, PWM1, 110);
-		for (int i = 0; i < 1000000; i++);
-		spi.send(spi_test, PWM2, 126);
-		for (int i = 0; i < 1000000; i++);
-		spi.send(spi_test, PWM2, 10);
-		for (int i = 0; i < 1000000; i++);
-		spi.send(spi_test, PWM2, 200);
-		for (int i = 0; i < 1000000; i++);
+		SPI_ADDR	motor = payload[1] + 1;
+		uint8_t		value = payload[2];
+
+		spi.send(spi_test, motor, value);
+
+		cli.log("Set PWM!");
+	}
+
+	// get encoder callback
+	void get_enc(const uint8_t* payload)
+	{
+		SPI_ADDR	enc = payload[1] + 3;
+
+		uint16_t buf = 0;
+		spi.request(spi_test, enc, &buf);
+
+		cli.log("Got encoder!");
 	}
 
 	// init commands
@@ -73,12 +85,12 @@ int main(void)
 	{
 		{ UART_GET, {
 			{ 0x00, &echo },        // echo
-			{ 0x01, NULL }          // n/a
+			{ 0x01, &get_enc }      // n/a
 		}},
 
 		{ UART_SET, {
 			{ 0x00, NULL },         // n/a
-			{ 0x01, NULL }          // n/a
+			{ 0x01, &set_pwm }      // n/a
 		}}
 	};
 
@@ -92,7 +104,7 @@ int main(void)
 		cli.check();
 
 		// sleep a little bit
-		for(int i = 0; i < 1000; i++);
+		for(int i = 0; i < 10000; i++);
 	}
 
 	return 0;
