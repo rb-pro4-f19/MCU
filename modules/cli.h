@@ -44,7 +44,7 @@ typedef enum	UART_FRAME_TYPE	UART_FRAME_TYPE;
 struct CLI_ACTION
 {
 	uint8_t id;
-	void(*callback)(void);
+	void(*callback)(const uint8_t* payload);
 };
 
 struct CLI_TYPE
@@ -60,10 +60,10 @@ extern struct CLI_CLASS
 	CLI_TYPE* 	commands;
 	UART*		uart_module;
 
-	void(*const init)(CLI_TYPE* commands, UART* uart_module); // optional
-	void(*const check)(void);
-	void(*const log)(const char* msg);
-	void(*const parse_frame)(UART_FRAME* frame);
+	void(* const init)(CLI_TYPE* commands, UART* uart_module); // optional
+	void(* const check)(void);
+	void(* const log)(const char* msg);
+	void(* const parse_frame)(UART_FRAME* frame);
 } cli;
 
 /****************************** End Of Module ******************************/

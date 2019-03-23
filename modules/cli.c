@@ -77,7 +77,7 @@ static void	CLI_log(const uint8_t* msg)
 	}
 
 	// send frame
-	uart.send(cli.uart_module, UART_MSG, msg, (uint8_t)payload_size);	
+	uart.send(cli.uart_module, UART_MSG, msg, (uint8_t)payload_size);
 }
 
 static void CLI_parse_frame(UART_FRAME* frame)
@@ -95,9 +95,14 @@ static void CLI_parse_frame(UART_FRAME* frame)
 	while (cli.commands[type_index].actions[++action_index].id != frame->payload[0]
 		&& action_index < CLI_MAX_ACTIONS);
 
-	// call appropriate callback (if not null pointer)
+	// assert callback
 	assert(cli.commands[type_index].actions[action_index].callback != NULL);
-	cli.commands[type_index].actions[action_index].callback();
+
+	// extract data
+	;
+
+	// callback w/ data
+	cli.commands[type_index].actions[action_index].callback(frame->payload);
 }
 
 /****************************** End Of Module ******************************/
