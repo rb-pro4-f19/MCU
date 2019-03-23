@@ -4,7 +4,7 @@
 *
 * FILENAME...:	tp.h
 * MODULENAME.:	TIMEPOINT
-* DOCS.......:	https://github.com/rb-pro4-f19/MCU/blob/master/docs/TIMEPOINT.md
+* DOCS.......:	https://git.io/fjJaE
 * VERSION....:	1.2.1
 *
 * DESCRIPTION:	Timepoint is an instance used for tracking time, including
