@@ -237,9 +237,12 @@ static SPI_FRAME _SPI_recieve(void)
 	tp.del(tp_timeout);
 
 	// return frame from MISO register if any data
+	// HUGE BUG!!!!!
+	// !!!!! ... chehcking for 0??
 	if((SSI0_SR_R & (1 << 3)) == 0)
 	{
-		uint16_t rx_data = (uint16_t) SSI0_DR_R;
+		volatile uint32_t rx_data;
+		rx_data = SSI0_DR_R;
 
 		return (SPI_FRAME){
 			(rx_data >> 12),
