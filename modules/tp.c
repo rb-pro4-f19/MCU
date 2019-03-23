@@ -118,7 +118,7 @@ static void TIMEPOINT_systick(void)
 	tp.inc(tp_sys, systick_dur_us, us);
 }
 
-static void TIMEPOINT_init_systick(uint32_t duration, TP_UNIT unit)
+static void TIMEPOINT_init_systick(uint16_t duration, TP_UNIT unit)
 /****************************************************************************
 *   Input    : Pointer to TIMEPOINT instance.
 *   Function : Increment TIMEPOINT with a systick unit.
