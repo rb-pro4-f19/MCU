@@ -35,13 +35,10 @@ void ISR_SYSTICK(void)
 
 /*******************************   Main   **********************************/
 
-void echo(const uint8_t* payload)
-{
-	cli.log("Got a frame, echoing back.");
-}
-
 int main(void)
 {
+
+	/** Initialization *****************************************************/
 
 	// disable interrupts
 	__disable_irq();
@@ -57,45 +54,51 @@ int main(void)
 	// init SPI
 	SPI* spi_test = spi.new(2);
 
-	// set pwm callback
-	void set_pwm(const uint8_t* payload)
+	/** Callbacks **********************************************************/
+
+	// echo callback
+	void echo(const uint8_t* args)
 	{
-		SPI_ADDR	motor = payload[1] + 1;
-		uint8_t		value = payload[2];
+		cli.log("Got a frame, echoing back.");
+	}
 
+	// set pwm callback
+	void set_pwm(SPI_ADDR motor, int8_t value)
+	{
 		spi.send(spi_test, motor, value);
-
-		cli.log("Set PWM!");
+		cli.logf("PWM of MOT%u was set to %d.", (motor - 1), value);
 	}
 
 	// get encoder callback
-	void get_enc(const uint8_t* payload)
+	void get_enc(SPI_ADDR enc)
 	{
-		SPI_ADDR	enc = payload[1] + 3;
+		uint16_t enc_dat = 0;
+		spi.request(spi_test, enc, &enc_dat);
 
-		uint16_t buf = 0;
-		spi.request(spi_test, enc, &buf);
-
-		cli.log("Got encoder!");
+		cli.logf("Delta of ENC%u is %d ticks.", (enc - 3), enc_dat);
 	}
+
+	/** Command Table ******************************************************/
 
 	// init commands
 	// max 8 types and 8 actions per type (#defined in cli.h)
 	CMD_TABLE
 	{
 		{ UART_GET, {
-			{ 0x00, &echo },        // echo
-			{ 0x01, &get_enc }      // n/a
+			{ 0x00, &echo },
+			{ 0x01, CLI_LAMBDA({ get_enc(args[0]); }) }
 		}},
 
 		{ UART_SET, {
-			{ 0x00, NULL },         // n/a
-			{ 0x01, &set_pwm }      // n/a
+			{ 0x00, NULL },
+			{ 0x01, CLI_LAMBDA({ set_pwm(args[0], args[1]); }) }
 		}}
 	};
 
+	/** Main ***************************************************************/
+
 	// enable interrupts
-	__enable_irq();
+	    __enable_irq();
 
 	// super-loop
 	for(;;)
@@ -106,6 +109,8 @@ int main(void)
 		// sleep a little bit
 		for(int i = 0; i < 10000; i++);
 	}
+
+	/** Garbage Collection *************************************************/
 
 	return 0;
 }
