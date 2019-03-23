@@ -52,7 +52,7 @@ static bool		 	SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer);
 
 static void 		_SPI_init(uint8_t clkdiv);
 static void 		_SPI_transmit(SPI_FRAME* frame, bool spinlock);
-static SPI_FRAME	_SPI_recieve(void);
+static SPI_FRAME	_SPI_recieve(SPI* this);
 
 /****************************   Class Struct   *****************************/
 
@@ -80,6 +80,7 @@ static SPI* SPI_new(uint8_t clkdiv)
 
 	// initialize variables
 	this->clkdiv 		= clkdiv;
+	this->tp_timeout	= tp.new();
 
 	_SPI_init(clkdiv);	// Initiate SSI0 module
 
@@ -93,6 +94,7 @@ static void SPI_del(SPI* this)
 *   Function : Destructor of a EXAMPLE instance.
 ****************************************************************************/
 {
+	tp.del(this->tp_timeout);
 	free(this);
 }
 
@@ -162,7 +164,7 @@ static bool SPI_send(SPI* this, SPI_ADDR addr, uint8_t data)
 	_SPI_transmit(&frm_send, true);
 
 	// try receiving acknowledge
-	SPI_FRAME frm_recived = _SPI_recieve();
+	SPI_FRAME frm_recived = _SPI_recieve(this);
 
 	// validate checksum
 	if (!chksum.val_4bit(FRAME_DATA(frm_send), 3, frm_recived.chksum))
@@ -191,7 +193,7 @@ static bool SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer)
 		_SPI_transmit(&frm_request, true);
 
 		// poll for response frame
-		SPI_FRAME frm_response = _SPI_recieve();
+		SPI_FRAME frm_response = _SPI_recieve(this);
 
 		// validate recieved frame and return 12 bit data
 		if(chksum.val_4bit(FRAME_DATA(frm_request), 3, frm_response.chksum))
@@ -221,20 +223,16 @@ static void _SPI_transmit(SPI_FRAME* frame, bool spinlock)
 	while(spinlock && ((SSI0_SR_R & (1 << 0)) == 0));
 }
 
-static SPI_FRAME _SPI_recieve(void)
+static SPI_FRAME _SPI_recieve(SPI* this)
 {
-	TIMEPOINT*	tp_timeout 	= tp.new();
+
 
 	// transmit empty frame and start timeout timer
 	_SPI_transmit(&FRAME_EMPTY, false);
-	tp.set(tp_timeout, tp.now());
+	tp.set(this->tp_timeout, tp.now());
 
 	// wait until FIFO register full or timedout passed
-	while((SSI0_SR_R & (1 << 3)) == 0 && tp.delta_now(tp_timeout, ms) < RX_TIMEOUT_MS);
-
-	// cleanup TIMEPOINT
-	// should be moved to be part of struct
-	tp.del(tp_timeout);
+	while((SSI0_SR_R & (1 << 3)) == 0 && tp.delta_now(this->tp_timeout, ms) < RX_TIMEOUT_MS);
 
 	// return frame from MISO register if any data
 	// HUGE BUG!!!!!

@@ -5,7 +5,7 @@
 * FILENAME...:	spi.h
 * MODULENAME.:	SPI
 * API........:	https://goo.gl/HVfyDq
-* VERSION....:	1.0.3
+* VERSION....:	1.0.4
 *
 * DESCRIPTION:	An example module. This might have a lengthy description, in
 *				which case, we simply add some tabs.
@@ -21,6 +21,7 @@
 #include <malloc.h>
 
 #include "../tm4c123gh6pm.h"
+# include "../modules/tp.h"
 
 /*****************************    Defines    *******************************/
 
@@ -80,6 +81,7 @@ struct SPI
 {
 	// public
 	uint8_t		clkdiv;
+	TIMEPOINT* 	tp_timeout;
 };
 
 /****************************** End Of Module ******************************/
