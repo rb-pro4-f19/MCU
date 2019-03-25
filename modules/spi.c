@@ -162,7 +162,6 @@ static bool SPI_send(SPI* this, SPI_ADDR addr, uint8_t data)
 	// construct frame & generate checksum
 	// checksum is generated from 12 bits (addr & data), e.g. 0000|addr|dataxxxx
 	SPI_FRAME frm_send = { addr, data, 0 };
-	//frm_send.chksum = chksum.gen_4bit(((frm_send.addr << 8) | frm_send.data) & 0x0FFF, 3);
 	frm_send.chksum = chksum.gen_4bit(FRAME_DATA(frm_send), 3);
 
 	// transmit frame and spinlock
@@ -172,7 +171,7 @@ static bool SPI_send(SPI* this, SPI_ADDR addr, uint8_t data)
 	SPI_FRAME frm_recived = _SPI_recieve(this);
 
 	// validate checksum
-	if (!chksum.val_4bit(FRAME_DATA(frm_send), 3, frm_recived.chksum))
+	if (!chksum.val_4bit(FRAME_DATA(frm_recived), 3, frm_recived.chksum))
 	{
 		return false;
 	}
@@ -201,7 +200,7 @@ static bool SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer)
 		SPI_FRAME frm_response = _SPI_recieve(this);
 
 		// validate recieved frame and return 12 bit data
-		if(chksum.val_4bit(FRAME_DATA(frm_request), 3, frm_response.chksum))
+		if(chksum.val_4bit(FRAME_DATA(frm_response), 3, frm_response.chksum))
 		{
 			*buffer = FRAME_DATA(frm_request);
 			return true;
