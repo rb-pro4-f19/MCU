@@ -29,6 +29,11 @@
 #define SSI0_CR0_FRF	4
 #define SSI0_CR0_DSS	0
 
+#define BSY				4
+#define RFF				3
+#define RNE				2
+#define TFE				0
+
 #define FRAME_EMPTY		(SPI_FRAME){0, 0, 0}
 #define FRAME_ERROR		(SPI_FRAME){1, 0, 0}
 #define FRAME_DATA(x)	(((x.addr << 8) | x.data) & 0x0FFF)
@@ -160,7 +165,7 @@ static bool SPI_send(SPI* this, SPI_ADDR addr, uint8_t data)
 	//frm_send.chksum = chksum.gen_4bit(((frm_send.addr << 8) | frm_send.data) & 0x0FFF, 3);
 	frm_send.chksum = chksum.gen_4bit(FRAME_DATA(frm_send), 3);
 
-	// transmit frame
+	// transmit frame and spinlock
 	_SPI_transmit(&frm_send, true);
 
 	// try receiving acknowledge
@@ -203,7 +208,7 @@ static bool SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer)
 		}
 	}
 
-	// force error, since no data was recieved
+	// force error since no valid data was recieved
 	return false;
 }
 
@@ -215,34 +220,38 @@ static void _SPI_transmit(SPI_FRAME* frame, bool spinlock)
 *   Function :
 ****************************************************************************/
 {
-	SSI0_DR_R = (frame->addr << 12) | (frame->data << 4) | (frame->chksum << 0);
-	while(spinlock && ((SSI0_SR_R & (1 << 0)) == 0));
+	// send data to register
+	SSI0_DR_R = ((frame->addr << 12) | (frame->data << 4) | (frame->chksum << 0));
+
+	// if spinlock enabled, wait until SSI Transmit FIFO Empty
+	while (spinlock && ((SSI0_SR_R & (1 << TFE)) == 0));
 }
 
 static SPI_FRAME _SPI_recieve(SPI* this)
 {
 	// transmit empty frame and start timeout timer
-	_SPI_transmit(&FRAME_EMPTY, false);
+	SPI_FRAME frm_empty = FRAME_EMPTY;
+
+	// start timeout timer
 	tp.set(this->tp_timeout, tp.now());
 
-	// wait until FIFO register full or timedout passed
-	while((SSI0_SR_R & (1 << 3)) == 0 && tp.delta_now(this->tp_timeout, ms) < RX_TIMEOUT_MS);
+	// transmit empty frame without spinlocking
+	_SPI_transmit(&frm_empty, false);
 
-	// check if MISO buffer has data; RFF bit != 0.
-	if(SSI0_SR_R & (1 << 3) == 0)
-	{
-		return FRAME_ERROR;
-	}
+	// wait until SSI0 not busy or timeout passed
+	while ((SSI0_SR_R & (1 << BSY)) && (tp.delta_now(this->tp_timeout, ms) < RX_TIMEOUT_MS));
+
+	// check if MISO buffer has data.
+	// if ((SSI0_SR_R & (1 << RFF)) == 0)
+	// {
+	// 	return (FRAME_ERROR);
+	// }
 
 	// read from register
-	uint16_t rx_data = (uint16_t)SSI0_DR_R;
+	volatile uint16_t rx_data = (uint16_t)SSI0_DR_R;
 
 	// construct and return frame
-	return (SPI_FRAME){
-		(rx_data >> 12),
-		(rx_data >> 4 & 0x00FF),
-		(rx_data & 0x000F)
-	};
+	return (SPI_FRAME){(rx_data >> 12), (rx_data >> 4 & 0x00FF), (rx_data & 0x000F)};
 }
 
 /****************************** End Of Module ******************************/

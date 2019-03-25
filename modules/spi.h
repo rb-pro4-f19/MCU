@@ -49,15 +49,15 @@ extern const struct SPI_CLASS
 
 enum SPI_ADDR
 {
-	CTRL 	= 0b0000,
-	PWM1 	= 0b0001,
-	PWM2 	= 0b0010,
-	ENC1 	= 0b0011,
-	ENC2 	= 0b0100,
-	HAL1 	= 0b0101,
-	HAL2 	= 0b0110,
-	CUR1 	= 0b0111,
-	CUR2 	= 0b1000
+	CTRL 	= 0x00,
+	PWM0 	= 0x01,
+	PWM1 	= 0x02,
+	ENC0 	= 0x03,
+	ENC1 	= 0x04,
+	HAL0 	= 0x05,
+	HAL1 	= 0x06,
+	CUR0 	= 0x07,
+	CUR1 	= 0x08
 };
 
 enum SPI_FRMPART
