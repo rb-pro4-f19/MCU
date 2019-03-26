@@ -161,13 +161,53 @@ static void _SPI_init(uint8_t clkdiv, uint8_t spimodule)
 		case 1:
 		{
 			//// configure ports
+			// enable SSI1 module
+			SYSCTL_RCGCSSI_R 	|= SYSCTL_RCGCSSI_R1;
+
+			// enable clock to GPIO Port D
+			SYSCTL_RCGCGPIO_R 	|= (1 << 3);
+
+			// enable alternative function for the SSI1 pins of PortA PD'x' (to be controlled by a peripheral)
+			GPIO_PORTD_AFSEL_R 	|= (1 << 0) | (1 <<  1) | (1 <<  2) | (1 <<  3);
+
+			// configure port-mux-control to SSI3
+			GPIO_PORTD_PCTL_R 	|= (2 << 0) | (2 << 4) | (2 << 8) | (2 << 12);
+
+			// enable the pin's digital function
+			GPIO_PORTD_DEN_R 	|= (1 << 0) | (1 <<  1) | (1 <<  2) | (1 <<  3);
+
+			//// configure SPI module
+
+			// disable SPI3
+			SSI1_CR1_R 			&= ~(1 << 1);
+
+			// set SPI modules to master
+			SSI1_CR1_R 			= 0x00000000;
+
+			// set CLK source to SYSCLK
+			SSI1_CC_R 			|= 0x0;
+
+			// set clock divider, keep SCR = 0
+			// bps = SYSCLK / (CPSDVSR * (1 + SCR))
+			SSI1_CPSR_R 		= clkdiv;
+
+			// set SPI mode and frame size to 16 bit
+			SSI1_CR0_R 			= (0 << SSI0_CR0_SCR) | (0 << SSI0_CR0_SPH) | (0 << SSI0_CR0_SPO) | (SSI_CR0_DSS_16 << SSI0_CR0_DSS);
+
+			// enable SPI0
+			SSI1_CR1_R 			|= (1 << 1);
+			break;
+		}
+		case 3:
+		{
+			//// configure ports
 			// enable SSI0 module
 			SYSCTL_RCGCSSI_R 	|= SYSCTL_RCGCSSI_R3;
 
 			// enable clock to GPIO Port D
 			SYSCTL_RCGCGPIO_R 	|= (1 << 3);
 
-			// enable alternative function for the SSI3 pins of PortA PA'x' (to be controlled by a peripheral)
+			// enable alternative function for the SSI3 pins of PortA PD'x' (to be controlled by a peripheral)
 			GPIO_PORTD_AFSEL_R 	|= (1 << 0) | (1 <<  1) | (1 <<  2) | (1 <<  3);
 
 			// configure port-mux-control to SSI3
@@ -186,7 +226,7 @@ static void _SPI_init(uint8_t clkdiv, uint8_t spimodule)
 
 			// set CLK source to SYSCLK
 			SSI3_CC_R 			|= 0x0;
-		
+
 			// set clock divider, keep SCR = 0
 			// bps = SYSCLK / (CPSDVSR * (1 + SCR))
 			SSI3_CPSR_R 		= clkdiv;
