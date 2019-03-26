@@ -74,7 +74,7 @@ Text.
 - **`[1.1.1] - 2019-03-23`** Checking wrong flag when recieving data in `_SPI_recieve()`.
 - **`[1.1.2] - 2019-03-25`** Optimized algorithm in `_SPI_recieve()`.
 - **`[1.1.2] - 2019-03-25`** Checking wrong checksum in `_SPI_send()` and `_SPI_request()`.
-
+- **`[1.1.3] - 2019-03-26`** Added SPI3 module `_SPI_init`.
 ---
 
 <!-- ----------------------------------------------------------------------------------------- -->

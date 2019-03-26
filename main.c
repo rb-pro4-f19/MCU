@@ -52,7 +52,7 @@ int main(void)
 	cli.uart_module = uart1;
 
 	// init SPI
-	SPI* spi_test = spi.new(2);
+	SPI* spi_test = spi.new(2,1);
 
 	/** Callbacks **********************************************************/
 

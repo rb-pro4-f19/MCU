@@ -49,13 +49,13 @@
 
 /************************  Function Declarations ***************************/
 
-static SPI*			SPI_new(uint8_t clkdiv);
+static SPI*			SPI_new(uint8_t clkdiv, uint8_t spimodule);
 static void 		SPI_del(SPI* this);
 
 static bool 		SPI_send(SPI* this, SPI_ADDR addr, uint8_t data);
 static bool		 	SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer);
 
-static void 		_SPI_init(uint8_t clkdiv);
+static void 		_SPI_init(uint8_t clkdiv, uint8_t spimodule);
 static void 		_SPI_transmit(SPI_FRAME* frame, bool spinlock);
 static SPI_FRAME	_SPI_recieve(SPI* this);
 
@@ -72,7 +72,7 @@ const struct SPI_CLASS spi =
 
 /***********************   Constructive Functions   ************************/
 
-static SPI* SPI_new(uint8_t clkdiv)
+static SPI* SPI_new(uint8_t clkdiv, uint8_t spimodule)
 /****************************************************************************
 *   Input    : type = desired EXM_TYPE for the instance.
 			 : init_val = desired value for `var`.
@@ -87,7 +87,7 @@ static SPI* SPI_new(uint8_t clkdiv)
 	this->clkdiv 		= clkdiv;
 	this->tp_timeout	= tp.new();
 
-	_SPI_init(clkdiv);	// Initiate SSI0 module
+	_SPI_init(clkdiv,spimodule);	// Initiate SSI0 module
 
 	// return pointer to instance
 	return this;
@@ -105,52 +105,99 @@ static void SPI_del(SPI* this)
 
 /*****************************   Functions   *******************************/
 
-static void _SPI_init(uint8_t clkdiv)
+static void _SPI_init(uint8_t clkdiv, uint8_t spimodule)
 /****************************************************************************
 *   Input    : this = pointer to a EXAMPLE instance.
 *   Function : Sets `is_set` of an EXAMPLE instance to false, such that
 			   something interesting may happen. Maybe.
 ****************************************************************************/
 {
+	switch (spimodule)
+		{
+		case 0:
+		{
 
-	//// configure ports
-	//// SSI0clk = PA2, SSIoFSS = PA3, SSI0Rx = PA4, SSI0TX = PA5
+			//// configure ports
+			//// SSI0clk = PA2, SSIoFSS = PA3, SSI0Rx = PA4, SSI0TX = PA5
 
-	// enable SSI0 module
-	SYSCTL_RCGCSSI_R 	|= SYSCTL_RCGCSSI_R0;
+			// enable SSI0 module
+			SYSCTL_RCGCSSI_R 	|= SYSCTL_RCGCSSI_R0;
 
-	// enable clock to GPIO Port A
-	SYSCTL_RCGCGPIO_R 	|= (1 << 0);
+			// enable clock to GPIO Port A
+			SYSCTL_RCGCGPIO_R 	|= (1 << 0);
 
-	// enable alternative function for the SSI0 pins of PortA PA'x' (to be controlled by a peripheral)
-	GPIO_PORTA_AFSEL_R 	|= (1 << 2) | (1 <<  3) | (1 <<  4) | (1 <<  5);
+			// enable alternative function for the SSI0 pins of PortA PA'x' (to be controlled by a peripheral)
+			GPIO_PORTA_AFSEL_R 	|= (1 << 2) | (1 <<  3) | (1 <<  4) | (1 <<  5);
 
-	// configure port-mux-control to SSI0
-	GPIO_PORTA_PCTL_R 	|= (2 << 8) | (2 << 12) | (2 << 16) | (2 << 20);
+			// configure port-mux-control to SSI0
+			GPIO_PORTA_PCTL_R 	|= (2 << 8) | (2 << 12) | (2 << 16) | (2 << 20);
 
-	// enable the pin's digital function
-	GPIO_PORTA_DEN_R 	|= (1 << 2) | (1 <<  3) | (1 <<  4) | (1 <<  5);
+			// enable the pin's digital function
+			GPIO_PORTA_DEN_R 	|= (1 << 2) | (1 <<  3) | (1 <<  4) | (1 <<  5);
 
-	//// configure SPI module
+			//// configure SPI module
 
-	// disable SPI0
-	SSI0_CR1_R 			&= ~(1 << 1);
+			// disable SPI0
+			SSI0_CR1_R 			&= ~(1 << 1);
 
-	// set SPI modules to master
-	SSI0_CR1_R 			= 0x00000000;
+			// set SPI modules to master
+			SSI0_CR1_R 			= 0x00000000;
 
-	// set CLK source to SYSCLK
-	SSI0_CC_R 			|= 0x0;
+			// set CLK source to SYSCLK
+			SSI0_CC_R 			|= 0x0;
 
-	// set clock divider, keep SCR = 0
-	// bps = SYSCLK / (CPSDVSR * (1 + SCR))
-	SSI0_CPSR_R 		= clkdiv;
+			// set clock divider, keep SCR = 0
+			// bps = SYSCLK / (CPSDVSR * (1 + SCR))
+			SSI0_CPSR_R 		= clkdiv;
 
-	// set SPI mode and frame size to 16 bit
-	SSI0_CR0_R 			= (0 << SSI0_CR0_SCR) | (0 << SSI0_CR0_SPH) | (0 << SSI0_CR0_SPO) | (SSI_CR0_DSS_16 << SSI0_CR0_DSS);
+			// set SPI mode and frame size to 16 bit
+			SSI0_CR0_R 			= (0 << SSI0_CR0_SCR) | (0 << SSI0_CR0_SPH) | (0 << SSI0_CR0_SPO) | (SSI_CR0_DSS_16 << SSI0_CR0_DSS);
 
-	// enable SPI0
-	SSI0_CR1_R 			|= (1 << 1);
+			// enable SPI0
+			SSI0_CR1_R 			|= (1 << 1);
+			break;
+		}
+		case 1:
+		{
+			//// configure ports
+			// enable SSI0 module
+			SYSCTL_RCGCSSI_R 	|= SYSCTL_RCGCSSI_R3;
+
+			// enable clock to GPIO Port D
+			SYSCTL_RCGCGPIO_R 	|= (1 << 3);
+
+			// enable alternative function for the SSI3 pins of PortA PA'x' (to be controlled by a peripheral)
+			GPIO_PORTD_AFSEL_R 	|= (1 << 0) | (1 <<  1) | (1 <<  2) | (1 <<  3);
+
+			// configure port-mux-control to SSI3
+			GPIO_PORTD_PCTL_R 	|= (1 << 0) | (1 << 4) | (1 << 8) | (1 << 16);
+
+			// enable the pin's digital function
+			GPIO_PORTD_DEN_R 	|= (1 << 0) | (1 <<  1) | (1 <<  2) | (1 <<  3);
+
+			//// configure SPI module
+
+			// disable SPI3
+			SSI3_CR1_R 			&= ~(1 << 1);
+
+			// set SPI modules to master
+			SSI3_CR1_R 			= 0x00000000;
+
+			// set CLK source to SYSCLK
+			SSI3_CC_R 			|= 0x0;
+		
+			// set clock divider, keep SCR = 0
+			// bps = SYSCLK / (CPSDVSR * (1 + SCR))
+			SSI3_CPSR_R 		= clkdiv;
+
+			// set SPI mode and frame size to 16 bit
+			SSI3_CR0_R 			= (0 << SSI0_CR0_SCR) | (0 << SSI0_CR0_SPH) | (0 << SSI0_CR0_SPO) | (SSI_CR0_DSS_16 << SSI0_CR0_DSS);
+
+			// enable SPI0
+			SSI3_CR1_R 			|= (1 << 1);
+			break;
+		}
+	}
 }
 
 static bool SPI_send(SPI* this, SPI_ADDR addr, uint8_t data)

@@ -8,7 +8,7 @@ void spi_test(void)
 {
     // init SPI instance @ 8MHz (
     // bps = SYSCLK / (CPSDVSR * (1 + SCR))
-    SPI* spi_test = spi.new(2);
+    SPI* spi_test = spi.new(2,1);
 
     // send value '110' to PWM1
     spi.send(spi_test, PWM1, 110);

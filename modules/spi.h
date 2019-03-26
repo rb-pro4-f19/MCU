@@ -5,7 +5,7 @@
 * FILENAME...:	spi.h
 * MODULENAME.:	SPI
 * DOCS.......:	https://git.io/fjJa2
-* VERSION....:	1.1.2
+* VERSION....:	1.1.3
 *
 * DESCRIPTION:	An example module. This might have a lengthy description, in
 *				which case, we simply add some tabs.
@@ -38,7 +38,7 @@ typedef enum    SPI_FRMPART SPI_FRMPART;
 
 extern const struct SPI_CLASS
 {
-	SPI*		(*new)(uint8_t clkdiv);
+	SPI*		(*new)(uint8_t clkdiv, uint8_t spimodule);
 	void		(*del)(SPI* this);
 
 	bool 		(*send)(SPI* this, SPI_ADDR addr, uint8_t data);
