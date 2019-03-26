@@ -88,7 +88,7 @@ static SPI* SPI_new(uint8_t clkdiv, uint8_t spimodule)
 	this->clkdiv 		= clkdiv;
 	this->tp_timeout	= tp.new();
 
-	_SPI_init(clkdiv,spimodule);	// Initiate SSI0 module
+	_SPI_init(clkdiv,spimodule);	// Initiate SSI1 module
 
 	// return pointer to instance
 	return this;
@@ -119,9 +119,9 @@ static void _SPI_init(uint8_t clkdiv, uint8_t spimodule)
 		{
 
 			//// configure ports
-			//// SSI0clk = PA2, SSIoFSS = PA3, SSI0Rx = PA4, SSI0TX = PA5
+			//// SSI0clk = PA2, SSI0FSS = PA3, SSI0Rx = PA4, SSI0TX = PA5
 
-			// enable SSI0 module
+			// enable SSI1 module
 			SYSCTL_RCGCSSI_R 	|= SYSCTL_RCGCSSI_R0;
 
 			// enable clock to GPIO Port A
@@ -308,10 +308,10 @@ static void _SPI_transmit(SPI_FRAME* frame, bool spinlock)
 ****************************************************************************/
 {
 	// send data to register
-	SSI0_DR_R = ((frame->addr << 12) | (frame->data << 4) | (frame->chksum << 0));
+	SSI1_DR_R = ((frame->addr << 12) | (frame->data << 4) | (frame->chksum << 0));
 
 	// if spinlock enabled, wait until SSI Transmit FIFO Empty
-	while (spinlock && ((SSI0_SR_R & (1 << TFE)) == 0));
+	while (spinlock && ((SSI1_SR_R & (1 << TFE)) == 0));
 }
 
 static SPI_FRAME _SPI_recieve(SPI* this)
@@ -326,17 +326,17 @@ static SPI_FRAME _SPI_recieve(SPI* this)
 	// transmit empty frame without spinlocking
 	_SPI_transmit(&frm_empty, false);
 
-	// wait until SSI0 not busy or timeout passed
-	while ((SSI0_SR_R & (1 << BSY)) && (tp.delta_now(this->tp_timeout, ms) < RX_TIMEOUT_MS));
+	// wait until SSI1 not busy or timeout passed
+	while ((SSI1_SR_R & (1 << BSY)) && (tp.delta_now(this->tp_timeout, ms) < RX_TIMEOUT_MS));
 
 	// check if MISO buffer has data.
-	// if ((SSI0_SR_R & (1 << RFF)) == 0)
+	// if ((SSI1_SR_R & (1 << RFF)) == 0)
 	// {
 	// 	return (FRAME_ERROR);
 	// }
 
 	// read from register
-	rx_data = (uint16_t)SSI0_DR_R;
+	rx_data = (uint16_t)SSI1_DR_R;
 
 	// log read data
 	cli.logf("Data: %x", rx_data);
