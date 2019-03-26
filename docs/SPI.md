@@ -58,10 +58,28 @@ Text.
 
 <!-- ----------------------------------------------------------------------------------------- -->
 
+### [1.2.0] - 2019-03-26
+
+#### Added
+- `.flush()` method for flushing FIFO buffer.
+- `#defines` for pins (`PD0` etc.); should be moved to `driver.h` later.
+
+#### Changed
+- Reverted multiple cases in `_SPI_init()`; switched to SSI3 module.
+- Minor optimizations and semantic updates.
+
+#### Fixed
+- spinlock in `_SPI_transmit()` was not blocking; changed to poll on `BSY` flag.
+- FIFO was not flushed after transmission; popped element was always `0x00`.
+
+---
+
+<!-- ----------------------------------------------------------------------------------------- -->
+
 ### [1.1.0] - 2019-03-15
 
 #### Added
-- `FRAME_DATA(x)` define to extract "header + payload" data
+- `FRAME_DATA(x)` define to extract "header + payload" data.
 
 #### Changed
 - Implemented `CHECKSUM 1.2.X` module.
@@ -74,7 +92,8 @@ Text.
 - **`[1.1.1] - 2019-03-23`** Checking wrong flag when recieving data in `_SPI_recieve()`.
 - **`[1.1.2] - 2019-03-25`** Optimized algorithm in `_SPI_recieve()`.
 - **`[1.1.2] - 2019-03-25`** Checking wrong checksum in `_SPI_send()` and `_SPI_request()`.
-- **`[1.1.3] - 2019-03-26`** Added SPI3 module `_SPI_init`.
+- **`[1.1.3] - 2019-03-26`** Added SPI3 module `_SPI_init()`.
+
 ---
 
 <!-- ----------------------------------------------------------------------------------------- -->

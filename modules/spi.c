@@ -35,6 +35,18 @@
 #define RNE				2
 #define TFE				0
 
+#define PORTD			3
+
+#define PD0				0
+#define PD1				1
+#define PD2				2
+#define PD3				3
+
+#define PD0MUX			0
+#define PD1MUX			4
+#define PD2MUX			8
+#define PD3MUX			12
+
 #define FRAME_EMPTY		(SPI_FRAME){0, 0, 0}
 #define FRAME_ERROR		(SPI_FRAME){1, 0, 0}
 #define FRAME_DATA(x)	(((x.addr << 8) | x.data) & 0x0FFF)
@@ -50,13 +62,14 @@
 
 /************************  Function Declarations ***************************/
 
-static SPI*			SPI_new(uint8_t clkdiv, uint8_t spimodule);
+static SPI*			SPI_new(uint8_t clkdiv);
 static void 		SPI_del(SPI* this);
 
 static bool 		SPI_send(SPI* this, SPI_ADDR addr, uint8_t data);
 static bool		 	SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer);
+static void		 	SPI_flush(SPI* this);
 
-static void 		_SPI_init(uint8_t clkdiv, uint8_t spimodule);
+static void 		_SPI_init(uint8_t clkdiv);
 static void 		_SPI_transmit(SPI_FRAME* frame, bool spinlock);
 static SPI_FRAME	_SPI_recieve(SPI* this);
 
@@ -68,18 +81,13 @@ const struct SPI_CLASS spi =
 	.del			= &SPI_del,
 
 	.send			= &SPI_send,
-	.request		= &SPI_request
+	.request		= &SPI_request,
+	.flush 			= &SPI_flush
 };
 
 /***********************   Constructive Functions   ************************/
 
-static SPI* SPI_new(uint8_t clkdiv, uint8_t spimodule)
-/****************************************************************************
-*   Input    : type = desired EXM_TYPE for the instance.
-			 : init_val = desired value for `var`.
-*   Output   : Pointer to a new EXAMPLE instance.
-*   Function : Constructor of a EXAMPLE instance.
-****************************************************************************/
+static SPI* SPI_new(uint8_t clkdiv)
 {
 	// allocate memory
 	SPI* this = malloc(sizeof(SPI));
@@ -88,17 +96,13 @@ static SPI* SPI_new(uint8_t clkdiv, uint8_t spimodule)
 	this->clkdiv 		= clkdiv;
 	this->tp_timeout	= tp.new();
 
-	_SPI_init(clkdiv,spimodule);	// Initiate SSI0 module
+	_SPI_init(clkdiv);	// Initiate SSI0 module
 
 	// return pointer to instance
 	return this;
 }
 
 static void SPI_del(SPI* this)
-/****************************************************************************
-*   Input    : this = pointer to a EXAMPLE instance.
-*   Function : Destructor of a EXAMPLE instance.
-****************************************************************************/
 {
 	tp.del(this->tp_timeout);
 	free(this);
@@ -106,106 +110,48 @@ static void SPI_del(SPI* this)
 
 /*****************************   Functions   *******************************/
 
-static void _SPI_init(uint8_t clkdiv, uint8_t spimodule)
-/****************************************************************************
-*   Input    : this = pointer to a EXAMPLE instance.
-*   Function : Sets `is_set` of an EXAMPLE instance to false, such that
-			   something interesting may happen. Maybe.
-****************************************************************************/
+static void _SPI_init(uint8_t clkdiv)
 {
-	switch (spimodule)
-		{
-		case 0:
-		{
+	//// configure GPIO
 
-			//// configure ports
-			//// SSI0clk = PA2, SSIoFSS = PA3, SSI0Rx = PA4, SSI0TX = PA5
+	// enable SSI module
+	SYSCTL_RCGCSSI_R 	|= SYSCTL_RCGCSSI_R3;
 
-			// enable SSI0 module
-			SYSCTL_RCGCSSI_R 	|= SYSCTL_RCGCSSI_R0;
+	// enable clock to GPIO Port D
+	SYSCTL_RCGCGPIO_R 	|= (1 << PORTD);
 
-			// enable clock to GPIO Port A
-			SYSCTL_RCGCGPIO_R 	|= (1 << 0);
+	// enable alternative function for the SSI3 pins of PortA PA'x' (to be controlled by a peripheral)
+	GPIO_PORTD_AFSEL_R 	|= (1 << PD0) | (1 << PD1) | (1 << PD2) | (1 << PD3);
 
-			// enable alternative function for the SSI0 pins of PortA PA'x' (to be controlled by a peripheral)
-			GPIO_PORTA_AFSEL_R 	|= (1 << 2) | (1 <<  3) | (1 <<  4) | (1 <<  5);
+	// configure port-mux-control to SSI
+	GPIO_PORTD_PCTL_R 	|= (1 << PD0MUX) | (1 << PD1MUX) | (1 << PD2MUX) | (1 << PD3MUX);
 
-			// configure port-mux-control to SSI0
-			GPIO_PORTA_PCTL_R 	|= (2 << 8) | (2 << 12) | (2 << 16) | (2 << 20);
+	// enable the pin's digital function
+	GPIO_PORTD_DEN_R 	|= (1 << PD0) | (1 << PD1) | (1 << PD2) | (1 << PD3);
 
-			// enable the pin's digital function
-			GPIO_PORTA_DEN_R 	|= (1 << 2) | (1 <<  3) | (1 <<  4) | (1 <<  5);
+	//// configure SPI module
 
-			//// configure SPI module
+	// disable SPI
+	SSI3_CR1_R 			&= ~(1 << 1);
 
-			// disable SPI0
-			SSI0_CR1_R 			&= ~(1 << 1);
+	// set SPI modules to master
+	SSI3_CR1_R 			= 0x00000000;
 
-			// set SPI modules to master
-			SSI0_CR1_R 			= 0x00000000;
+	// set CLK source to SYSCLK
+	SSI3_CC_R 			|= 0x0;
 
-			// set CLK source to SYSCLK
-			SSI0_CC_R 			|= 0x0;
+	// set clock divider, keep SCR = 0
+	// bps = SYSCLK / (CPSDVSR * (1 + SCR))
+	SSI3_CPSR_R 		= clkdiv;
 
-			// set clock divider, keep SCR = 0
-			// bps = SYSCLK / (CPSDVSR * (1 + SCR))
-			SSI0_CPSR_R 		= clkdiv;
+	// set SPI mode and frame size to 16 bit
+	SSI3_CR0_R 			= (0 << SSI0_CR0_SCR) | (0 << SSI0_CR0_SPH) | (0 << SSI0_CR0_SPO) | (SSI_CR0_DSS_16 << SSI0_CR0_DSS);
 
-			// set SPI mode and frame size to 16 bit
-			SSI0_CR0_R 			= (0 << SSI0_CR0_SCR) | (0 << SSI0_CR0_SPH) | (0 << SSI0_CR0_SPO) | (SSI_CR0_DSS_16 << SSI0_CR0_DSS);
-
-			// enable SPI0
-			SSI0_CR1_R 			|= (1 << 1);
-			break;
-		}
-		case 1:
-		{
-			//// configure ports
-			// enable SSI0 module
-			SYSCTL_RCGCSSI_R 	|= SYSCTL_RCGCSSI_R3;
-
-			// enable clock to GPIO Port D
-			SYSCTL_RCGCGPIO_R 	|= (1 << 3);
-
-			// enable alternative function for the SSI3 pins of PortA PA'x' (to be controlled by a peripheral)
-			GPIO_PORTD_AFSEL_R 	|= (1 << 0) | (1 <<  1) | (1 <<  2) | (1 <<  3);
-
-			// configure port-mux-control to SSI3
-			GPIO_PORTD_PCTL_R 	|= (1 << 0) | (1 << 4) | (1 << 8) | (1 << 16);
-
-			// enable the pin's digital function
-			GPIO_PORTD_DEN_R 	|= (1 << 0) | (1 <<  1) | (1 <<  2) | (1 <<  3);
-
-			//// configure SPI module
-
-			// disable SPI3
-			SSI3_CR1_R 			&= ~(1 << 1);
-
-			// set SPI modules to master
-			SSI3_CR1_R 			= 0x00000000;
-
-			// set CLK source to SYSCLK
-			SSI3_CC_R 			|= 0x0;
-		
-			// set clock divider, keep SCR = 0
-			// bps = SYSCLK / (CPSDVSR * (1 + SCR))
-			SSI3_CPSR_R 		= clkdiv;
-
-			// set SPI mode and frame size to 16 bit
-			SSI3_CR0_R 			= (0 << SSI0_CR0_SCR) | (0 << SSI0_CR0_SPH) | (0 << SSI0_CR0_SPO) | (SSI_CR0_DSS_16 << SSI0_CR0_DSS);
-
-			// enable SPI0
-			SSI3_CR1_R 			|= (1 << 1);
-			break;
-		}
-	}
+	// enable SPI
+	SSI3_CR1_R 			|= (1 << 1);
 }
 
 static bool SPI_send(SPI* this, SPI_ADDR addr, uint8_t data)
-/****************************************************************************
-*   Input    : this = pointer to a SPI instance
-*   Function : Send a frame and will wait for a acknolendge or not
-****************************************************************************/
 {
 	// construct frame & generate checksum
 	// checksum is generated from 12 bits (addr & data), e.g. 0000|addr|dataxxxx
@@ -214,6 +160,9 @@ static bool SPI_send(SPI* this, SPI_ADDR addr, uint8_t data)
 
 	// transmit frame and spinlock
 	_SPI_transmit(&frm_send, true);
+
+	// flush buffer
+	spi.flush(this);
 
 	// try receiving acknowledge
 	SPI_FRAME frm_recived = _SPI_recieve(this);
@@ -229,10 +178,6 @@ static bool SPI_send(SPI* this, SPI_ADDR addr, uint8_t data)
 }
 
 static bool SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer)
-/****************************************************************************
-*	Input    : frame sending
-*   Function :
-****************************************************************************/
 {
 	// construct frame and generate checksum
 	SPI_FRAME frm_request	= { addr, 0, 0 };
@@ -243,6 +188,9 @@ static bool SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer)
 	{
 		// send request frame
 		_SPI_transmit(&frm_request, true);
+
+		// flush buffer
+		spi.flush(this);
 
 		// poll for response frame
 		SPI_FRAME frm_response = _SPI_recieve(this);
@@ -259,26 +207,31 @@ static bool SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer)
 	return false;
 }
 
+static void SPI_flush(SPI* this)
+{
+	for (volatile uint32_t tmp = 0; SSI3_SR_R & (1 << RNE); tmp = SSI3_DR_R);
+
+	// do {
+	// 	volatile uint32_t temp_data = SSI3_DR_R;
+	// }
+	// while(SSI3_SR_R & (1 << RNE));
+}
+
 /*************************   Private Functions   ***************************/
 
 static void _SPI_transmit(SPI_FRAME* frame, bool spinlock)
-/****************************************************************************
-*	Input    : frame transmitting
-*   Function :
-****************************************************************************/
 {
 	// send data to register
-	SSI0_DR_R = ((frame->addr << 12) | (frame->data << 4) | (frame->chksum << 0));
+	SSI3_DR_R = ((frame->addr << 12) | (frame->data << 4) | (frame->chksum << 0));
 
-	// if spinlock enabled, wait until SSI Transmit FIFO Empty
-	while (spinlock && ((SSI0_SR_R & (1 << TFE)) == 0));
+	// if spinlock enabled, wait until SSI BSY flag is cleared
+	while (spinlock && (SSI3_SR_R & (1 << BSY)));
 }
 
 static SPI_FRAME _SPI_recieve(SPI* this)
 {
-	// transmit empty frame and start timeout timer
-	SPI_FRAME frm_empty = FRAME_EMPTY;
-	volatile uint16_t rx_data = 0;
+	// construct empty frame
+	static SPI_FRAME frm_empty = FRAME_EMPTY;
 
 	// start timeout timer
 	tp.set(this->tp_timeout, tp.now());
@@ -286,23 +239,22 @@ static SPI_FRAME _SPI_recieve(SPI* this)
 	// transmit empty frame without spinlocking
 	_SPI_transmit(&frm_empty, false);
 
-	// wait until SSI0 not busy or timeout passed
-	while ((SSI0_SR_R & (1 << BSY)) && (tp.delta_now(this->tp_timeout, ms) < RX_TIMEOUT_MS));
-
-	// check if MISO buffer has data.
-	// if ((SSI0_SR_R & (1 << RFF)) == 0)
-	// {
-	// 	return (FRAME_ERROR);
-	// }
+	// wait until SSI not busy or timeout passed
+	while ((SSI3_SR_R & (1 << BSY)) && (tp.delta_now(this->tp_timeout, ms) < RX_TIMEOUT_MS));
 
 	// read from register
-	rx_data = (uint16_t)SSI0_DR_R;
+	volatile uint16_t rx_data = (uint16_t)SSI3_DR_R;
 
 	// log read data
-	cli.logf("Data: %x", rx_data);
+	cli.logf("rx_data: 0x%x", rx_data);
 
 	// construct and return frame
-	return (SPI_FRAME){(rx_data >> 12), (rx_data >> 4 & 0x00FF), (rx_data & 0x000F)};
+	return (SPI_FRAME)
+	{
+		(rx_data >> 12),
+		(rx_data >> 4 & 0x00FF),
+		(rx_data & 0x000F)
+	};
 }
 
 /****************************** End Of Module ******************************/
