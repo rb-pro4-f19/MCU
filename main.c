@@ -52,7 +52,7 @@ int main(void)
 	cli.uart_module = uart1;
 
 	// init SPI
-	SPI* spi_test = spi.new(2,1);
+	SPI* spi_test = spi.new(16);
 
 	/** Callbacks **********************************************************/
 
@@ -65,8 +65,14 @@ int main(void)
 	// set pwm callback
 	void set_pwm(SPI_ADDR motor, int8_t value)
 	{
-		spi.send(spi_test, motor, value);
-		cli.logf("PWM of MOT%u was set to %d.", (motor - 1), value);
+		if (spi.send(spi_test, motor, value))
+		{
+			cli.logf("PWM of MOT%u was set to %d.", (motor - 1), value);
+		}
+		else
+		{
+			cli.logf("Error settting PWM.");
+		}
 	}
 
 	// get encoder callback

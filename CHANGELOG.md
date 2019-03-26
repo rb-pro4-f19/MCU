@@ -2,6 +2,9 @@
 
 ### [Unreleased]
 
+#### Changed
+- Expanded `set_pwm()`; now logs success or failure based on `spi.send()`.
+
 <!-- #### Known Issues
 - Item -->
 
