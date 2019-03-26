@@ -19,6 +19,7 @@
 #include "spi.h"
 #include "chksum.h"
 #include "tp.h"
+#include "cli.h"
 
 /*****************************    Defines    *******************************/
 
@@ -230,6 +231,7 @@ static SPI_FRAME _SPI_recieve(SPI* this)
 {
 	// transmit empty frame and start timeout timer
 	SPI_FRAME frm_empty = FRAME_EMPTY;
+	volatile uint16_t rx_data = 0;
 
 	// start timeout timer
 	tp.set(this->tp_timeout, tp.now());
@@ -247,7 +249,10 @@ static SPI_FRAME _SPI_recieve(SPI* this)
 	// }
 
 	// read from register
-	volatile uint16_t rx_data = (uint16_t)SSI0_DR_R;
+	rx_data = (uint16_t)SSI0_DR_R;
+
+	// log read data
+	cli.logf("Data: %x", rx_data);
 
 	// construct and return frame
 	return (SPI_FRAME){(rx_data >> 12), (rx_data >> 4 & 0x00FF), (rx_data & 0x000F)};
