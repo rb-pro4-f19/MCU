@@ -72,6 +72,9 @@ Text.
 - spinlock in `_SPI_transmit()` was not blocking; changed to poll on `BSY` flag.
 - FIFO was not flushed after transmission; popped element was always `0x00`.
 
+#### Hotfixes
+- **`[1.2.1] - 2019-04-02`** Returning wrong frame in `SPI_request()`.
+
 ---
 
 <!-- ----------------------------------------------------------------------------------------- -->

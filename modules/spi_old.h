@@ -5,7 +5,7 @@
 * FILENAME...:	spi.h
 * MODULENAME.:	SPI
 * DOCS.......:	https://git.io/fjJa2
-* VERSION....:	1.2.1
+* VERSION....:	1.2.0
 *
 * DESCRIPTION:	An example module. This might have a lengthy description, in
 *				which case, we simply add some tabs.
@@ -43,7 +43,7 @@ extern const struct SPI_CLASS
 
 	bool 		(*send)(SPI* this, SPI_ADDR addr, uint8_t data);
 	bool		(*request)(SPI* this, SPI_ADDR addr, uint16_t* buffer);
-	bool		(*flush)(SPI* this);
+	void		(*flush)(SPI* this);
 } spi;
 
 /*****************************    Constructs   *****************************/
@@ -51,14 +51,22 @@ extern const struct SPI_CLASS
 enum SPI_ADDR
 {
 	CTRL 	= 0x00,
-	PWM0 	= 0x01,
-	PWM1 	= 0x02,
+	MOT0 	= 0x01,
+	MOT1 	= 0x02,
 	ENC0 	= 0x03,
 	ENC1 	= 0x04,
 	HAL0 	= 0x05,
 	HAL1 	= 0x06,
 	CUR0 	= 0x07,
-	CUR1 	= 0x08
+	CUR1 	= 0x08,
+	FREQ	= 0x09,
+
+	RES0	= 0x0A,
+	RES1	= 0x0B,
+	RES2	= 0x0C,
+	RES3	= 0x0D,
+
+	RETX 	= 0x0F
 };
 
 enum SPI_FRMPART
