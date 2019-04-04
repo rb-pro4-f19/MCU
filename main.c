@@ -6,9 +6,10 @@
 
 #include "driver.h"
 #include "tp.h"
-#include "spi.h"
+#include "spi_old.h"
 #include "uart.h"
 #include "cli.h"
+#include "mot.h"
 
 /*****************************    Defines    *******************************/
 
@@ -47,12 +48,22 @@ int main(void)
 	sys_tick_init(SYSTICK_DUR_MS);
 	tp.init_systick(SYSTICK_DUR_MS, ms);
 
-	// init UART and assign to CLI
-	UART* uart1 = uart.new(BAUD_9600);
-	cli.uart_module = uart1;
+	// init UART @ 9600 baud
+	UART* uart_main = uart.new(BAUD_9600);
 
-	// init SPI
-	SPI* spi_test = spi.new(16);
+	// init SPI @ 1 MHz (16 000 000 / 16)
+	SPI* spi_main = spi.new(16);
+
+	// assign UART module to CLI
+	cli.uart_module = uart_main;
+
+	// init MOT0 w/ ENC0 to 10 kHz
+	MOTOR* mot0 = mot.new(MOT0, ENC0, 10);
+	mot0->spi_module = spi_main;
+
+	// init MOT1 w/ ENC0 to 10 kHz
+	MOTOR* mot1 = mot.new(MOT1, ENC1, 10);
+	mot1->spi_module = spi_main;
 
 	/** Callbacks **********************************************************/
 
@@ -60,28 +71,6 @@ int main(void)
 	void echo(const uint8_t* args)
 	{
 		cli.log("Got a frame, echoing back.");
-	}
-
-	// set pwm callback
-	void set_pwm(SPI_ADDR motor, int8_t value)
-	{
-		if (spi.send(spi_test, motor, value))
-		{
-			cli.logf("PWM of MOT%u was set to %d.", (motor - 1), value);
-		}
-		else
-		{
-			cli.logf("Error settting PWM.");
-		}
-	}
-
-	// get encoder callback
-	void get_enc(SPI_ADDR enc)
-	{
-		uint16_t enc_dat = 0;
-		spi.request(spi_test, enc, &enc_dat);
-
-		cli.logf("Delta of ENC%u is %d ticks.", (enc - 3), enc_dat);
 	}
 
 	/** Command Table ******************************************************/
@@ -92,12 +81,14 @@ int main(void)
 	{
 		{ UART_GET, {
 			{ 0x00, &echo },
-			{ 0x01, CLI_LAMBDA({ get_enc(args[0]); }) }
+			{ 0x01, CLI_LAMBDA({ mot.get_enc(args[0] == MOT1 ? mot1 : mot0); }) }
 		}},
 
 		{ UART_SET, {
 			{ 0x00, NULL },
-			{ 0x01, CLI_LAMBDA({ set_pwm(args[0], args[1]); }) }
+			// { 0x01, CLI_LAMBDA({ mot.set_pwm(args[0], args[1]); }) },
+			{ 0x01, CLI_LAMBDA({ mot.set_pwm((args[0] == MOT1 ? mot1 : mot0), args[1]); }) },
+			{ 0x02, CLI_LAMBDA({ mot.set_freq((args[0] == MOT1 ? mot1 : mot0), args[1]); }) }
 		}}
 	};
 

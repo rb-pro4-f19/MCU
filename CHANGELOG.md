@@ -2,11 +2,16 @@
 
 ### [Unreleased]
 
-#### Changed
-- Expanded `set_pwm()`; now logs success or failure based on `spi.send()`.
+#### Known Issues
+- UART protocol max payload size wrongly defined; maximum of `256 bytes` instead of `32 bytes`.
+- All `.log()` methods fail when used with payload > 32 chars.
 
-<!-- #### Known Issues
-- Item -->
+#### Added
+- `mot.h` module + initialization + updated `CMD_TABLE` accordingly
+
+#### Changed
+- ~~Expanded `set_pwm()`; now logs success or failure based on `spi.send()`.~~
+- Replaced `set_pwm()` with `mot.set_pwm(MOTOR*)`
 
 <!-- #### Todo
 - Item. -->
