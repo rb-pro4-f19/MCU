@@ -33,8 +33,9 @@ Text.
 
 ### [Unreleased]
 
-<!-- #### Known Issues
-- Item -->
+#### Known Issues
+
+- All `.log()` methods fail when used with payload > 32 chars; UART protocol wrongly defined.
 
 <!-- #### Todo
 - Item. -->
