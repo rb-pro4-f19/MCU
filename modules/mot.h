@@ -32,14 +32,19 @@ typedef struct  MOTOR MOTOR;
 
 /*************************    Class Functions    ***************************/
 
-extern const struct MOTOR_CLASS
+extern struct MOTOR_CLASS
 {
-	MOTOR*		(*new)(SPI_ADDR mot_addr, SPI_ADDR enc_addr, uint8_t freq_khz);
-	void		(*del)(MOTOR* this);
+	SPI* 		spi_module;
 
-	void 		(*set_pwm)(MOTOR* this, uint8_t pwm);
-	void 		(*set_freq)(MOTOR* this, uint8_t freq_khz);
-	int16_t		(*get_enc)(MOTOR* this);
+	MOTOR*		(* const new)(SPI_ADDR mot_addr, SPI_ADDR enc_addr, uint8_t freq_khz);
+	void		(* const del)(MOTOR* this);
+
+	void 		(* const operate)(MOTOR* this);
+	void 		(* const feed)(MOTOR* this);
+
+	void 		(* const set_pwm)(MOTOR* this, uint8_t pwm);
+	void 		(* const set_freq)(MOTOR* this, uint8_t freq_khz);
+	int16_t		(* const get_enc)(MOTOR* this);
 } mot;
 
 /*****************************    Constructs   *****************************/
@@ -47,9 +52,10 @@ extern const struct MOTOR_CLASS
 struct MOTOR
 {
 	// public
-	SPI*		spi_module;
 	SPI_ADDR 	mot_addr;
 	SPI_ADDR 	enc_addr;
+
+	TIMEPOINT*	tp_watchdog;
 
 	uint8_t		freq_khz;
 	uint8_t		pwm;

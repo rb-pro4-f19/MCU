@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <malloc.h>
+#include "assert.h"
 
 #include "cli.h"
 #include "mot.h"
@@ -23,6 +24,8 @@
 
 /*****************************   Constants   *******************************/
 
+#define WATCHDOG_TIMEOUT_US 900
+
 /*****************************   Variables   *******************************/
 
 /************************  Function Declarations ***************************/
@@ -30,18 +33,26 @@
 static MOTOR*		MOTOR_new(SPI_ADDR mot_addr, SPI_ADDR enc_addr, uint8_t freq_khz);
 static void 		MOTOR_del(MOTOR* this);
 
-static void 		MOTOR_set_pwm(MOTOR* this, uint8_t pwm);
-static int16_t 		MOTOR_get_enc(MOTOR* this);
-static void 		MOTOR_set_freq(MOTOR* this, uint8_t freq_khz);
+static void 		MOTOR_operate(MOTOR* this);
+static inline void 	MOTOR_feed(MOTOR* this);
 
-static MOTOR* 		_MOTOR_get_handler(SPI_ADDR mot_addr);
+static void 		MOTOR_set_pwm(MOTOR* this, uint8_t pwm);
+static void 		MOTOR_set_freq(MOTOR* this, uint8_t freq_khz);
+static int16_t 		MOTOR_get_enc(MOTOR* this);
+
+//static MOTOR* 		_MOTOR_get_handler(SPI_ADDR mot_addr);
 
 /****************************   Class Struct   *****************************/
 
-const struct MOTOR_CLASS mot =
+struct MOTOR_CLASS mot =
 {
+	.spi_module		= NULL,
+
 	.new			= &MOTOR_new,
 	.del			= &MOTOR_del,
+
+	.operate		= &MOTOR_operate,
+	.feed			= &MOTOR_feed,
 
 	.set_pwm 		= &MOTOR_set_pwm,
 	.set_freq 		= &MOTOR_set_freq,
@@ -52,39 +63,83 @@ const struct MOTOR_CLASS mot =
 
 static MOTOR* MOTOR_new(SPI_ADDR mot_addr, SPI_ADDR enc_addr, uint8_t freq_khz)
 {
+	// check SPI module
+	assert(mot.spi_module != NULL);
+
 	// allocate memory
 	MOTOR* this = malloc(sizeof(MOTOR));
 
 	// initialize variables
-	this->mot_addr 	= mot_addr;
-	this->enc_addr 	= enc_addr;
+	this->mot_addr 		= mot_addr;
+	this->enc_addr 		= enc_addr;
 
-	this->pwm 		= 0;
-	this->enc		= 0;
+	this->tp_watchdog	= tp.new();
 
-	mot.set_pwm(this, freq_khz);
+	this->freq_khz		= 0;
+	this->pwm 			= 0;
+	this->enc			= 0;
+
+	mot.set_freq(this, freq_khz);
 
 	// return pointer to instance
 	return this;
 }
 
 static void MOTOR_del(MOTOR* this)
-/****************************************************************************
-*   Input    : this = pointer to a EXAMPLE instance.
-*   Function : Destructor of a EXAMPLE instance.
-****************************************************************************/
 {
+	tp.del(this->tp_watchdog);
 	free(this);
 }
 
 /*****************************   Functions   *******************************/
 
+static void MOTOR_operate(MOTOR* this)
+{
+	// check WATCHDOG timeout
+	if (tp.delta_now(this->tp_watchdog, us) > WATCHDOG_TIMEOUT_US)
+	{
+		mot.feed(this);
+	}
+}
+
+static inline void MOTOR_feed(MOTOR* this)
+{
+	// try feeding the watchdog; reset timer on success
+	if (spi.send(mot.spi_module, this->mot_addr, this->pwm))
+	{
+		tp.set(this->tp_watchdog, tp.now());
+	}
+}
+
 static void	MOTOR_set_pwm(MOTOR* this, uint8_t pwm)
 {
-	if (spi.send(this->spi_module, this->mot_addr, pwm))
+	if (spi.send(mot.spi_module, this->mot_addr, pwm))
 	{
 		this->pwm = pwm;
-		cli.logf("PWM of MOT%u was set to %d.", (this->mot_addr - 1), pwm);
+		cli.logf("PWM of MOT%u was set to %d.", (this->mot_addr - 1), (int8_t)pwm);
+	}
+	else
+	{
+		// exception handling here
+	}
+}
+
+static void MOTOR_set_freq(MOTOR* this, uint8_t freq_khz)
+{
+	// clamp max frequency
+	if (freq_khz > 100) { freq_khz = 100; }
+
+	uint8_t freq_khz_val = freq_khz;
+
+	// set MSB to motor indicator
+	// MOT1 -> 1XXX_XXXX
+	freq_khz = (this->mot_addr == MOT1) ? (0b10000000 | freq_khz) : (freq_khz);
+
+	// send command to set PWM
+	if (spi.send(mot.spi_module, FREQ, freq_khz))
+	{
+		this->freq_khz = freq_khz;
+		cli.logf("FRQ of MOT%u was set to %d kHz.", (this->mot_addr - 1), freq_khz_val);
 	}
 	else
 	{
@@ -97,7 +152,7 @@ static int16_t MOTOR_get_enc(MOTOR* this)
 	static uint16_t enc_buf = 0;
 	static int16_t  enc_dat = 0;
 
-	if (spi.request(this->spi_module, this->enc_addr, &enc_buf))
+	if (spi.request(mot.spi_module, this->enc_addr, &enc_buf))
 	{
 		// replace most-significant nibble with 0 or 1 according to MSB of 12th bit
 		// 0000_1000_0101_0000 -> 1111_1000_0101_0000
@@ -112,27 +167,6 @@ static int16_t MOTOR_get_enc(MOTOR* this)
 		// exception handling here
 
 		return 0;
-	}
-}
-
-static void MOTOR_set_freq(MOTOR* this, uint8_t freq_khz)
-{
-	// clamp max frequency
-	if (freq_khz > 100) { freq_khz = 100; }
-
-	// set MSB to motor indicator
-	// MOT1 -> 1XXX_XXXX
-	freq_khz = (this->mot_addr == MOT1) ? (0b10000000 | freq_khz) : (freq_khz);
-
-	// send command to set PWM
-	if (spi.send(this->spi_module, FREQ, freq_khz))
-	{
-		this->freq_khz = freq_khz;
-		cli.logf("FRQ of MOT%u was set to %d kHz.", (this->mot_addr - 1), freq_khz);
-	}
-	else
-	{
-		// exception handling here
 	}
 }
 
