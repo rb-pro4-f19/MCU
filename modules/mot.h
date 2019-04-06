@@ -4,8 +4,8 @@
 *
 * FILENAME...:	mot.h
 * MODULENAME.:	MOTOR
-* API........:	n/a
-* VERSION....:	1.0.0
+* API........:	https://git.io/fjLSM
+* VERSION....:	1.1.0
 *
 * DESCRIPTION:	An example module. This might have a lengthy description, in
 *				which case, we simply add some tabs.
