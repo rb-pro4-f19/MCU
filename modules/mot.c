@@ -2,8 +2,8 @@
 * University of Southern Denmark
 * RB-PRO4 F19
 *
-* FILENAME...:	exm.c
-* MODULENAME.:	EXAMPLE
+* FILENAME...:	mot.c
+* MODULENAME.:	MOTOR
 *
 * For an API and DESCRIPTION, please refer to the  module
 * specification file (.h-file).
@@ -24,7 +24,7 @@
 
 /*****************************   Constants   *******************************/
 
-#define WATCHDOG_TIMEOUT_US 900
+#define WATCHDOG_TIMEOUT_US 800
 
 /*****************************   Variables   *******************************/
 
@@ -113,9 +113,16 @@ static inline void MOTOR_feed(MOTOR* this)
 
 static void	MOTOR_set_pwm(MOTOR* this, uint8_t pwm)
 {
-	if (spi.send(mot.spi_module, this->mot_addr, pwm))
+	int8_t pwm_val = pwm;
+
+	if (pwm_val < 0)
 	{
-		this->pwm = pwm;
+		pwm_val = ((~pwm_val) + 1) | 0b10000000;
+	}
+
+	if (spi.send(mot.spi_module, this->mot_addr, pwm_val))
+	{
+		this->pwm = pwm_val;
 		cli.logf("PWM of MOT%u was set to %d.", (this->mot_addr - 1), (int8_t)pwm);
 	}
 	else

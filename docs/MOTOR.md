@@ -33,6 +33,9 @@ Text.
 
 ### [Unreleased]
 
+#### Changed
+- `pwm_val` added to `.set_pwm()` for compatability with FPGA.
+
 <!-- #### Known Issues -->
 
 
