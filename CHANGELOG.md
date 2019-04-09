@@ -7,14 +7,24 @@
 - All `.log()` methods fail when used with payload > 32 chars.
 
 #### Added
+- Implemented `sys.h` module.
+
+#### Changed
+- Moved initialization code to `sys.init()`.
+- Moved system operation code to `sys.operate()`.
+
+---
+
+<!-- ----------------------------------------------------------------------------------------- -->
+
+### [1.3.0] - 2019-03-23
+
+#### Added
 - `mot.h` module + initialization + updated `CMD_TABLE` accordingly
 
 #### Changed
 - ~~Expanded `set_pwm()`; now logs success or failure based on `spi.send()`.~~
 - Replaced `set_pwm()` with `mot.set_pwm(MOTOR*)`
-
-<!-- #### Todo
-- Item. -->
 
 ---
 
