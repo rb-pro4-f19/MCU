@@ -33,9 +33,12 @@ Text.
 
 ### [Unreleased]
 
+#### Added
+- Slewrate protection in `.operate()` + `.set_pwm()`; controlled by `bool slew`.
+
 #### Changed
 - `pwm_data` added to `.set_pwm()` for compatability with FPGA.
-- Removed logging from `.set_pwm()`.
+- Removed logging from `.set_pwm()`, `.set_freq()` and `.get_enc()`.
 - Made `.set_pwm()` save actual (signed) pwm value, instead of the FPGA formatted one.
 - Made `.set_pwm()` and `.set_freq()` return type `bool` for external use.
 

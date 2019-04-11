@@ -56,10 +56,16 @@ struct MOTOR
 	SPI_ADDR 	enc_addr;
 
 	TIMEPOINT*	tp_watchdog;
+	TIMEPOINT*	tp_slewrate;
 
 	uint8_t		freq_khz;
 	int8_t		pwm;
+	int8_t		pwm_target;
 	int16_t 	enc;
+
+	bool		slew;
+	uint16_t	slew_dx;
+	uint8_t		slew_dy;
 };
 
 /****************************** End Of Module ******************************/

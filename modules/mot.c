@@ -26,6 +26,10 @@
 
 #define WATCHDOG_TIMEOUT_US 800
 
+#define SLEWRATE_EN			true
+#define SLEWRATE_DY			1
+#define SLEWRATE_DX_US		500
+
 /*****************************   Variables   *******************************/
 
 /************************  Function Declarations ***************************/
@@ -74,10 +78,16 @@ static MOTOR* MOTOR_new(SPI_ADDR mot_addr, SPI_ADDR enc_addr, uint8_t freq_khz)
 	this->enc_addr 		= enc_addr;
 
 	this->tp_watchdog	= tp.new();
+	this->tp_slewrate	= tp.new();
 
 	this->freq_khz		= 0;
 	this->pwm 			= 0;
+	this->pwm_target	= 0;
 	this->enc			= 0;
+
+	this->slew			= SLEWRATE_EN;
+	this->slew_dy		= SLEWRATE_DY;
+	this->slew_dx		= SLEWRATE_DX_US;
 
 	mot.set_freq(this, freq_khz);
 
@@ -88,6 +98,7 @@ static MOTOR* MOTOR_new(SPI_ADDR mot_addr, SPI_ADDR enc_addr, uint8_t freq_khz)
 static void MOTOR_del(MOTOR* this)
 {
 	tp.del(this->tp_watchdog);
+	tp.del(this->tp_slewrate);
 	free(this);
 }
 
@@ -99,6 +110,12 @@ static void MOTOR_operate(MOTOR* this)
 	if (tp.delta_now(this->tp_watchdog, us) > WATCHDOG_TIMEOUT_US)
 	{
 		mot.feed(this);
+	}
+
+	// update slewrate pwm
+	if (this->pwm != this->pwm_target)
+	{
+		mot.set_pwm(this, this->pwm_target);
 	}
 }
 
@@ -115,19 +132,30 @@ static bool	MOTOR_set_pwm(MOTOR* this, int8_t pwm)
 {
 	static uint8_t pwm_data;
 
+	// update target pwm
+	this->pwm_target = pwm;
+
+	// slewrate restriction (if enabled)
+	if (this->slew)
+	{
+		// check if dx timestep has passed
+		if (tp.delta_now(this->tp_slewrate, us) < this->slew_dx) { return false; }
+
+		// apply slewrate dy restrictions
+		pwm = (pwm < 0) ? (this->pwm - this->slew_dy) : (this->pwm + this->slew_dy);
+	}
+
 	// convert pwm to the FPGA format; MSB = direction
 	//  31 = ‭00011111‬ -> ‭00011111‬
 	// -31 = ‭11100001‬ -> 1‭0011111‬
 	pwm_data = (pwm < 0) ? ((~pwm) + 1) | 0b10000000 : pwm;
 
-	// apply security slewrate
-	;
-
-	// try sending data to FPGA; update struct on success + reset watchdog
+	// try sending data to FPGA; update current PWM on success + reset timers
 	if (spi.send(mot.spi_module, this->mot_addr, pwm_data))
 	{
 		this->pwm = pwm;
 		tp.set(this->tp_watchdog, tp.now());
+		tp.set(this->tp_slewrate, tp.now());
 		return true;
 	}
 	else
@@ -142,17 +170,14 @@ static bool MOTOR_set_freq(MOTOR* this, uint8_t freq_khz)
 	// clamp max frequency
 	if (freq_khz > 100) { freq_khz = 100; }
 
-	uint8_t freq_khz_val = freq_khz;
-
-	// set MSB to motor indicator
-	// MOT1 -> 1XXX_XXXX
-	freq_khz = (this->mot_addr == MOT1) ? (0b10000000 | freq_khz) : (freq_khz);
+	// format for FPGA; set MSB to motor indicator
+	// MOT1 -> 1XXX_XXXX or MOT0 -> 0XXX_XXXX
+	uint8_t freq_khz_data = (this->mot_addr == MOT1) ? (0b10000000 | freq_khz) : (freq_khz);
 
 	// send command to set PWM
-	if (spi.send(mot.spi_module, FREQ, freq_khz))
+	if (spi.send(mot.spi_module, FREQ, freq_khz_data))
 	{
 		this->freq_khz = freq_khz;
-		cli.logf("FRQ of MOT%u was set to %d kHz.", (this->mot_addr - 1), freq_khz_val);
 		return true;
 	}
 	else
@@ -172,15 +197,11 @@ static int16_t MOTOR_get_enc(MOTOR* this)
 		// replace most-significant nibble with 0 or 1 according to MSB of 12th bit
 		// 0000_1000_0101_0000 -> 1111_1000_0101_0000
 		enc_dat = (enc_buf & (1 << 11)) ? (enc_buf | 0xF000) : (enc_buf);
-
-		cli.logf("Delta of ENC%u is %d ticks.", (this->enc_addr - 3), enc_dat);
-
 		return enc_dat;
 	}
 	else
 	{
 		// exception handling here
-
 		return 0;
 	}
 }
