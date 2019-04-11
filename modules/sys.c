@@ -27,10 +27,12 @@
 
 /*****************************   Variables   *******************************/
 
-SPI*	spi_main;
-UART* 	uart_main;
-MOTOR* 	mot0;
-MOTOR* 	mot1;
+SPI*		spi_main;
+UART* 		uart_main;
+MOTOR* 		mot0;
+MOTOR* 		mot1;
+
+TIMEPOINT*	tp_test;
 
 /************************  Function Declarations ***************************/
 
@@ -39,6 +41,7 @@ static void 		SYSTEM_operate(void);
 static void			SYSTEM_echo(void);
 
 static void 		SYSTEM_set_mode(SYS_MODE mode);
+static void 		SYSTEM_set_pwm(SPI_ADDR mot_addr, int8_t pwm);
 static void 		SYSTEM_set_pos(uint8_t theta);
 static void 		SYSTEM_set_enc(uint8_t ticks);
 
@@ -54,6 +57,7 @@ struct SYSTEM_CLASS sys =
 	.operate		= &SYSTEM_operate,
 	.echo 			= &SYSTEM_echo,
 
+	.set_pwm		= &SYSTEM_set_pwm,
 	.set_mode		= NULL,
 	.set_pos		= NULL,
 	.set_enc		= NULL,
@@ -92,6 +96,9 @@ static void SYSTEM_init(void)
 	sys.is_init = true;
 	sys.state = OPERATION;
 
+	// setup test timepoint
+	tp_test = tp.new();
+
 	// enable interrupts
 	__enable_irq();
 }
@@ -122,6 +129,14 @@ static void SYSTEM_operate(void)
 			mot.operate(mot0);
 			mot.operate(mot1);
 
+			// if ((tp.delta_now(tp_test, ms) > 800) && (mot1->pwm != 0))
+			// {
+			// 	static int8_t pwm = 31;
+			// 	pwm = ~pwm;
+			// 	mot.set_pwm(mot1, pwm);
+			// 	tp.set(tp_test, tp.now());
+			// }
+
 			break;
 		}
 
@@ -137,6 +152,18 @@ static void SYSTEM_operate(void)
 static void	SYSTEM_echo(void)
 {
 	cli.log("Got a frame, echoing back.");
+}
+
+static void SYSTEM_set_pwm(SPI_ADDR mot_addr, int8_t pwm)
+{
+	 if (mot.set_pwm(mot_addr == MOT1 ? mot1 : mot0, pwm))
+	 {
+		 cli.logf("PWM of MOT%u was set to %d.", mot_addr - 1, pwm);
+	 }
+	 else
+	 {
+		 cli.logf("Error setting PWM of MOT%u.", mot_addr - 1);
+	 }
 }
 
 /****************************** End Of Module ******************************/

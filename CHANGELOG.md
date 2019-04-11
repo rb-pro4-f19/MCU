@@ -1,5 +1,7 @@
 ## Changelog
 
+<!-- ----------------------------------------------------------------------------------------- -->
+
 ### [Unreleased]
 
 #### Known Issues
@@ -7,7 +9,16 @@
 - All `.log()` methods fail when used with payload > 32 chars.
 
 #### Added
-- Implemented `sys.h` module.
+- `.set_pwm` method with CLI log.
+
+---
+
+<!-- ----------------------------------------------------------------------------------------- -->
+
+### [1.4.0] - 2019-04-11
+
+#### Added
+- Implemented `sys.h` module; all changed will be logged here.
 
 #### Changed
 - Moved initialization code to `sys.init()`.
