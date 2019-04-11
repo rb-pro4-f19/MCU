@@ -123,15 +123,15 @@ static void SYSTEM_operate(void)
 
 		case CALIBRATION:
 		{
+
 			sys.is_cal = 1;
 
 			static int16_t
-				temp0_mot0,
-				temp1_mot0,
 				temp0_mot1,
 				temp1_mot1 = 0;
 
-			static CALI_MODES cur_cali = CALI_TURN_OFF;
+			static CALI_MODES
+				cur_cali = CALI_TURN_OFF;
 
 			if ( cur_cali == CALI_TURN_OFF || ( tp.delta_now(sys.tp_sys, ms) > UPDATE_TP_CALI ) )
 			{
@@ -185,17 +185,16 @@ static void SYSTEM_operate(void)
 
 					case CALI_MOT1:
 
-
 						temp1_mot1 += mot.get_enc(mot1);
 
 						// Idk which hall is which.
 
-						if ( hal.read(hal1) == HAL_HIGH || hal.read(hal0) == HAL_HIGH )
+						if ( hal.read(hal1) == HAL_HIGH )
 						{
 
 							mot.set_pwm(mot1, 0);
+							mot.set_pwm(mot0, 30);
 							cur_cali = CALI_STOP_MOT0;
-							sys.state = IDLE;
 							sys.is_cal = 0;
 
 						}
@@ -203,6 +202,17 @@ static void SYSTEM_operate(void)
 						break;
 
 					case CALI_STOP_MOT0:
+
+						// Idk which hall is which.
+
+						if ( hal.read(hal0) == HAL_LOW )
+						{
+
+							mot.set_pwm(mot0, 0);
+							sys.state = IDLE;
+							sys.is_cal = 0;
+
+						}
 
 						break;
 
