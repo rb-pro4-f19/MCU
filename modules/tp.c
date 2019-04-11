@@ -37,7 +37,7 @@ static void 		TIMEPOINT_del(TIMEPOINT* this);
 static void 		TIMEPOINT_systick(void);
 static void 		TIMEPOINT_init_systick(uint16_t duration, TP_UNIT unit);
 
-static void 		TIMEPOINT_reset(TIMEPOINT* this);
+static inline void 	TIMEPOINT_reset(TIMEPOINT* this);
 static inline void 	TIMEPOINT_increment(TIMEPOINT* this, uint32_t value, TP_UNIT unit);
 static uint32_t		TIMEPOINT_convert_us(uint64_t value_us, TP_UNIT unit);
 static void 		TIMEPOINT_set(TIMEPOINT* this, uint16_t time_array[TIME_ARRAY_SIZE]);
@@ -77,23 +77,20 @@ static TIMEPOINT* TIMEPOINT_new()
 	// allocate memory
 	TIMEPOINT* this = malloc(sizeof(TIMEPOINT));
 
-	// initialize time_array
-	//for (int i = 0; i < sizeof(tp->time_array)/sizeof(uint64_t); i++)
-	for (int i = 0; i < TIME_ARRAY_SIZE; i++)
-	{
-		this->time_array[i] = 0;
-	}
-
-	// memset everything to zero
+	// initialize time_array to zero
 	tp.reset(this);
 
 	// return pointer to instance
 	return this;
 }
 
-static void TIMEPOINT_reset(TIMEPOINT* this)
+static inline void TIMEPOINT_reset(TIMEPOINT* this)
 {
-	memset(this, 0, sizeof(TIMEPOINT));
+	//memset(this, 0, sizeof(TIMEPOINT));
+	for (int i = 0; i < TIME_ARRAY_SIZE; i++)
+	{
+		this->time_array[i] = 0;
+	}
 }
 
 static void TIMEPOINT_del(TIMEPOINT* this)
@@ -136,10 +133,7 @@ static inline void TIMEPOINT_increment(TIMEPOINT* this, uint32_t value, TP_UNIT 
 *   Function : Recurisve increment of TIMEPOINT, until no overflow.
 ****************************************************************************/
 {
-	uint16_t divisor;
-
-	// add value
-	this->time_array[unit] += value;
+	static uint16_t divisor = 1;
 
 	// select arithemtic divisor value
 	switch (unit)
@@ -168,6 +162,8 @@ static inline void TIMEPOINT_increment(TIMEPOINT* this, uint32_t value, TP_UNIT 
 			return;
 	}
 
+	// add value
+	this->time_array[unit] += value;
 
 	// calculate remainder and quotient
 	uint16_t remainder	= this->time_array[unit] % divisor;

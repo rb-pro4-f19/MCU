@@ -59,6 +59,9 @@ Text.
 #### Known Issues
 - Maximum `systick_dur_us` is ~65 μs, with no error checking on init.
 
+#### Changed
+- Update `.reset()` to not use `memset()`.
+
 <!-- #### Todo
 - Item. -->
 
