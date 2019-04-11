@@ -2,10 +2,10 @@
 * University of Southern Denmark
 * RB-PRO4 F19
 *
-* FILENAME...:	mot.h
-* MODULENAME.:	MOTOR
+* FILENAME...:	hal.h
+* MODULENAME.:	HAL
 * API........:	https://git.io/fjLSM
-* VERSION....:	1.1.0
+* VERSION....:	1.0.0
 *
 * DESCRIPTION:	An example module. This might have a lengthy description, in
 *				which case, we simply add some tabs.
@@ -24,7 +24,8 @@
 
 /*****************************    Defines    *******************************/
 
-typedef struct  HALL HALL;
+typedef struct  HAL HAL;
+typedef	enum	HAL_VAL HAL_VAL;
 
 /***********************     External Variables     ************************/
 
@@ -32,23 +33,30 @@ typedef struct  HALL HALL;
 
 /*************************    Class Functions    ***************************/
 
-extern struct HALL_CLASS
+extern struct HAL_CLASS
 {
 	SPI* 		spi_module;
 
-	HALL*		(* const new)(SPI_ADDR hall_addr);
-	void		(* const del)(HALL* this);
+	HAL*		(* const new)(SPI_ADDR HAL_addr);
+	void		(* const del)(HAL* this);
 
-	bool		(* const read)(HALL* this);
-} mot;
+	HAL_VAL		(* const read)(HAL* this);
+
+} hal;
+
+enum HAL_VAL
+{
+	HAL_LOW,
+	HAL_HIGH,
+	HAL_FAULT
+};
 
 /*****************************    Constructs   *****************************/
 
-struct HALL
+struct HAL
 {
 	// public
-	SPI_ADDR 	hall_addr;
-
+	SPI_ADDR 	hal_addr;
 };
 
 /****************************** End Of Module ******************************/
