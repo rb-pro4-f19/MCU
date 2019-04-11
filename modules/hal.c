@@ -49,7 +49,7 @@ struct HAL_CLASS hal =
 static HAL* HAL_new(SPI_ADDR hal_addr)
 {
 	// check SPI module -- why??
-	assert(hal.spi_module != NULL);
+	//assert(hal.spi_module != NULL);
 
 	// allocate memory
 	HAL* this = malloc(sizeof(HAL));
