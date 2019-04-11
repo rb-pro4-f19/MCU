@@ -49,8 +49,11 @@ static void			SYSTEM_echo(void);
 
 static void 		SYSTEM_set_mode(SYS_MODE mode);
 static void 		SYSTEM_set_pwm(SPI_ADDR mot_addr, int8_t pwm);
+static void 		SYSTEM_set_freq(SPI_ADDR mot_addr, uint8_t freq_khz);
 static void 		SYSTEM_set_pos(uint8_t theta);
 static void 		SYSTEM_set_enc(uint8_t ticks);
+
+static void 		SYSTEM_get_enc(SPI_ADDR mot_addr);
 
 /****************************   Class Struct   *****************************/
 
@@ -66,9 +69,12 @@ struct SYSTEM_CLASS sys =
 	.echo 			= &SYSTEM_echo,
 
 	.set_pwm		= &SYSTEM_set_pwm,
+	.set_freq 		= &SYSTEM_set_freq,
 	.set_mode		= NULL,
 	.set_pos		= NULL,
 	.set_enc		= NULL,
+
+	.get_enc 		= &SYSTEM_get_enc,
 };
 
 /*****************************   Functions   *******************************/
@@ -272,14 +278,20 @@ static void	SYSTEM_echo(void)
 
 static void SYSTEM_set_pwm(SPI_ADDR mot_addr, int8_t pwm)
 {
-	 if (mot.set_pwm(mot_addr == MOT1 ? mot1 : mot0, pwm))
-	 {
-		 cli.logf("PWM of MOT%u was set to %d.", mot_addr - 1, pwm);
-	 }
-	 else
-	 {
-		 cli.logf("Error setting PWM of MOT%u.", mot_addr - 1);
-	 }
+    mot.set_pwm(mot_addr == MOT1 ? mot1 : mot0, pwm);
+    cli.logf("PWM of MOT%u was set to %d.", mot_addr - 1, pwm);
+}
+
+static void SYSTEM_set_freq(SPI_ADDR mot_addr, uint8_t freq_khz)
+{
+	mot.set_freq(mot_addr == MOT1 ? mot1 : mot0, freq_khz);
+	cli.logf("FRQ of MOT%u was set to %d kHz.", mot_addr - 1, freq_khz);
+}
+
+static void SYSTEM_get_enc(SPI_ADDR mot_addr)
+{
+	int16_t enc_dat =  mot.get_enc(mot_addr == ENC1 ? mot1 : mot0);
+	cli.logf("Delta of ENC%u is %d ticks.", mot_addr - 3, enc_dat);
 }
 
 /****************************** End Of Module ******************************/

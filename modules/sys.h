@@ -82,9 +82,12 @@ extern struct SYSTEM_CLASS
 	void		(* const echo)(void);
 
 	void 		(* const set_pwm)(SPI_ADDR mot_addr, int8_t pwm);
+	void 		(* const set_freq)(SPI_ADDR mot_addr, uint8_t freq_khz);
 	void 		(* const set_pos)(uint8_t theta);
 	void 		(* const set_enc)(uint8_t ticks);
 	void		(* const set_mode)(SYS_MODE mode);
+
+	void 		(* const get_enc)(SPI_ADDR mot_addr);
 } sys;
 
 /****************************** End Of Module ******************************/
