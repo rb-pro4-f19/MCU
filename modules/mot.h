@@ -42,8 +42,8 @@ extern struct MOTOR_CLASS
 	void 		(* const operate)(MOTOR* this);
 	void 		(* const feed)(MOTOR* this);
 
-	void 		(* const set_pwm)(MOTOR* this, uint8_t pwm);
-	void 		(* const set_freq)(MOTOR* this, uint8_t freq_khz);
+	bool 		(* const set_pwm)(MOTOR* this, int8_t pwm);
+	bool 		(* const set_freq)(MOTOR* this, uint8_t freq_khz);
 	int16_t		(* const get_enc)(MOTOR* this);
 } mot;
 
@@ -58,7 +58,7 @@ struct MOTOR
 	TIMEPOINT*	tp_watchdog;
 
 	uint8_t		freq_khz;
-	uint8_t		pwm;
+	int8_t		pwm;
 	int16_t 	enc;
 };
 

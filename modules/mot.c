@@ -36,8 +36,8 @@ static void 		MOTOR_del(MOTOR* this);
 static void 		MOTOR_operate(MOTOR* this);
 static inline void 	MOTOR_feed(MOTOR* this);
 
-static void 		MOTOR_set_pwm(MOTOR* this, uint8_t pwm);
-static void 		MOTOR_set_freq(MOTOR* this, uint8_t freq_khz);
+static bool 		MOTOR_set_pwm(MOTOR* this, int8_t pwm);
+static bool 		MOTOR_set_freq(MOTOR* this, uint8_t freq_khz);
 static int16_t 		MOTOR_get_enc(MOTOR* this);
 
 //static MOTOR* 		_MOTOR_get_handler(SPI_ADDR mot_addr);
@@ -111,27 +111,33 @@ static inline void MOTOR_feed(MOTOR* this)
 	}
 }
 
-static void	MOTOR_set_pwm(MOTOR* this, uint8_t pwm)
+static bool	MOTOR_set_pwm(MOTOR* this, int8_t pwm)
 {
-	int8_t pwm_val = pwm;
+	static uint8_t pwm_data;
 
-	if (pwm_val < 0)
-	{
-		pwm_val = ((~pwm_val) + 1) | 0b10000000;
-	}
+	// convert pwm to the FPGA format; MSB = direction
+	//  31 = ‭00011111‬ -> ‭00011111‬
+	// -31 = ‭11100001‬ -> 1‭0011111‬
+	pwm_data = (pwm < 0) ? ((~pwm) + 1) | 0b10000000 : pwm;
 
-	if (spi.send(mot.spi_module, this->mot_addr, pwm_val))
+	// apply security slewrate
+	;
+
+	// try sending data to FPGA; update struct on success + reset watchdog
+	if (spi.send(mot.spi_module, this->mot_addr, pwm_data))
 	{
-		this->pwm = pwm_val;
-		cli.logf("PWM of MOT%u was set to %d.", (this->mot_addr - 1), (int8_t)pwm);
+		this->pwm = pwm;
+		tp.set(this->tp_watchdog, tp.now());
+		return true;
 	}
 	else
 	{
 		// exception handling here
+		return false;
 	}
 }
 
-static void MOTOR_set_freq(MOTOR* this, uint8_t freq_khz)
+static bool MOTOR_set_freq(MOTOR* this, uint8_t freq_khz)
 {
 	// clamp max frequency
 	if (freq_khz > 100) { freq_khz = 100; }
@@ -147,10 +153,12 @@ static void MOTOR_set_freq(MOTOR* this, uint8_t freq_khz)
 	{
 		this->freq_khz = freq_khz;
 		cli.logf("FRQ of MOT%u was set to %d kHz.", (this->mot_addr - 1), freq_khz_val);
+		return true;
 	}
 	else
 	{
 		// exception handling here
+		return false;
 	}
 }
 

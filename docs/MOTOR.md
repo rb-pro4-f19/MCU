@@ -34,7 +34,10 @@ Text.
 ### [Unreleased]
 
 #### Changed
-- `pwm_val` added to `.set_pwm()` for compatability with FPGA.
+- `pwm_data` added to `.set_pwm()` for compatability with FPGA.
+- Removed logging from `.set_pwm()`.
+- Made `.set_pwm()` save actual (signed) pwm value, instead of the FPGA formatted one.
+- Made `.set_pwm()` and `.set_freq()` return type `bool` for external use.
 
 <!-- #### Known Issues -->
 
