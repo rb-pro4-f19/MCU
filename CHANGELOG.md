@@ -8,8 +8,8 @@
 - UART protocol max payload size wrongly defined; maximum of `256 bytes` instead of `32 bytes`.
 - All `.log()` methods fail when used with payload > 32 chars.
 
-#### Added
-- `.set_pwm` method with CLI log.
+#### Changed
+- Implemented new methods from SYS module into `CMD_TABLE`.
 
 ---
 

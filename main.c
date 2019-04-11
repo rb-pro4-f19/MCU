@@ -16,10 +16,6 @@ void ISR_SYSTICK(void)
 
 int main(void)
 {
-	/** Initialization *****************************************************/
-
-	sys.init();
-
 	/** Command Table ******************************************************/
 
 	// init commands
@@ -28,15 +24,19 @@ int main(void)
 	{
 		{ UART_GET, {
 			{ 0x00, CLI_LAMBDA({ sys.echo(); }) },
-			{ 0x01, CLI_LAMBDA({ mot.get_enc(args[0]  == ENC1 ? mot1 : mot0); }) }
+			{ 0x01, CLI_LAMBDA({ sys.get_enc(args[0]); }) }
 		}},
 
 		{ UART_SET, {
 			{ 0x00, NULL },
-			{ 0x01, CLI_LAMBDA({ mot.set_pwm(args[0]  == MOT1 ? mot1 : mot0, args[1]); }) },
-			{ 0x02, CLI_LAMBDA({ mot.set_freq(args[0] == MOT1 ? mot1 : mot0, args[1]); }) }
+			{ 0x01, CLI_LAMBDA({ sys.set_pwm(args[0], args[1]); }) },
+			{ 0x02, CLI_LAMBDA({ sys.set_freq(args[0], args[1]); }) }
 		}}
 	};
+
+	/** Initialization *****************************************************/
+
+	    sys.init();
 
 	/** Loop ***************************************************************/
 
