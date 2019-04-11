@@ -17,3 +17,6 @@ encoding//Release/subdir_rules.mk=UTF-8
 encoding//Release/subdir_vars.mk=UTF-8
 encoding//Release/test/subdir_rules.mk=UTF-8
 encoding//Release/test/subdir_vars.mk=UTF-8
+encoding//modules/mot.c=UTF-8
+encoding/<project>=UTF-8
+encoding/main.c=UTF-8
