@@ -99,13 +99,13 @@ static void SYSTEM_init(void)
 	// init HALL0
 	hal0 = hal.new(HAL0);
 
-	// init HALL0
+	// init HALL1
 	hal1 = hal.new(HAL1);
 
 	// update variables and state
 	sys.is_init = true;
 	sys.state = OPERATION;
-	sys.tp_sys	= tp.new();
+	sys.tp_sys = tp.new();
 
 	// enable interrupts
 	__enable_irq();
@@ -123,13 +123,13 @@ static void SYSTEM_operate(void)
 
 		case CALIBRATION:
 		{
-			/*
-			
+			sys.is_cal = 1;
+
 			static int16_t
-				cur_enc_mot0,
-				prev_enc_mot0,
-				cur_enc_mot1,
-				prev_enc_mot1 = 0;
+				temp0_mot0,
+				temp1_mot0,
+				temp0_mot1,
+				temp1_mot1 = 0;
 
 			static CALI_MODES cur_cali = CALI_TURN_OFF;
 
@@ -140,6 +140,7 @@ static void SYSTEM_operate(void)
 
 				switch (cur_cali)
 				{
+
 					case CALI_TURN_OFF:
 
 						// Safety
@@ -158,32 +159,46 @@ static void SYSTEM_operate(void)
 						// atleast every 10 ms
 
 						mot.set_pwm(mot1, 30);
-						cur_enc_mot1 = mot.get_enc(mot1);
+						temp1_mot1 = mot.get_enc(mot1);
 						cur_cali = CALI_STOP_MOT1;
 
 						break;
 
 					case CALI_STOP_MOT1:
 
-						prev_enc_mot1 = cur_enc_mot1;
-						cur_enc_mot1 = mot.get_enc(mot1);
+						temp0_mot1 = temp1_mot1;
+						temp1_mot1 = mot.get_enc(mot1);
 
 						// The if basically make sure that if it is 3 tick different then motor also stops
 						// due to might work as a spring
 
-						if ( abs(prev_enc_mot1, cur_enc_mot1, ALLOW_EOR_CALI) )
+						if ( abs(temp0_mot1, temp1_mot1, ALLOW_EOR_CALI) )
 						{
-							mot.set_pwm(mot1, 0);
+
+							temp1_mot1 = 0;
+							mot.set_pwm(mot1, -30);
 							cur_cali = CALI_MOT1;
+
 						}
 
 						break;
 
 					case CALI_MOT1:
 
-						prev_enc_mot1 = cur_enc_mot1;
-						cur_enc_mot1 = mot.get_enc(mot1);
-						// The if basically make sure that if it is one tick different, then motor also stops.
+
+						temp1_mot1 += mot.get_enc(mot1);
+
+						// Idk which hall is which.
+
+						if ( hal.read(hal1) == HAL_HIGH || hal.read(hal0) == HAL_HIGH )
+						{
+
+							mot.set_pwm(mot1, 0);
+							cur_cali = CALI_STOP_MOT0;
+							sys.state = IDLE;
+							sys.is_cal = 0;
+
+						}
 
 						break;
 
@@ -193,12 +208,12 @@ static void SYSTEM_operate(void)
 
 				};
 
-				mot.operate(mot0);
-				mot.operate(mot1);
+
 
 			};
 
-			*/
+			mot.operate(mot0);
+			mot.operate(mot1);
 
 		}
 
