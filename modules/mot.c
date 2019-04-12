@@ -28,7 +28,7 @@
 
 #define SLEWRATE_EN			true
 #define SLEWRATE_DY			1
-#define SLEWRATE_DX_US		500
+#define SLEWRATE_DX_US		10000
 
 /*****************************   Variables   *******************************/
 
@@ -83,6 +83,7 @@ static MOTOR* MOTOR_new(SPI_ADDR mot_addr, SPI_ADDR enc_addr, uint8_t freq_khz)
 	this->freq_khz		= 0;
 	this->pwm 			= 0;
 	this->pwm_target	= 0;
+	this->pwm_data		= 0;
 	this->enc			= 0;
 
 	this->slew			= SLEWRATE_EN;
@@ -122,7 +123,7 @@ static void MOTOR_operate(MOTOR* this)
 static inline void MOTOR_feed(MOTOR* this)
 {
 	// try feeding the watchdog; reset timer on success
-	if (spi.send(mot.spi_module, this->mot_addr, this->pwm))
+	if (spi.send(mot.spi_module, this->mot_addr, this->pwm_data))
 	{
 		tp.set(this->tp_watchdog, tp.now());
 	}
@@ -130,7 +131,7 @@ static inline void MOTOR_feed(MOTOR* this)
 
 static bool	MOTOR_set_pwm(MOTOR* this, int8_t pwm)
 {
-	static uint8_t pwm_data;
+	static uint8_t pwm_data = 0;
 
 	// update target pwm
 	this->pwm_target = pwm;
@@ -142,7 +143,9 @@ static bool	MOTOR_set_pwm(MOTOR* this, int8_t pwm)
 		if (tp.delta_now(this->tp_slewrate, us) < this->slew_dx) { return false; }
 
 		// apply slewrate dy restrictions
-		pwm = (pwm < 0) ? (this->pwm - this->slew_dy) : (this->pwm + this->slew_dy);
+		// target < current = decrement ... target > current = increment
+		pwm = (this->pwm_target < this->pwm) ? (this->pwm - this->slew_dy) : (this->pwm + this->slew_dy);
+
 	}
 
 	// convert pwm to the FPGA format; MSB = direction
@@ -154,8 +157,11 @@ static bool	MOTOR_set_pwm(MOTOR* this, int8_t pwm)
 	if (spi.send(mot.spi_module, this->mot_addr, pwm_data))
 	{
 		this->pwm = pwm;
+		this->pwm_data = pwm_data;
+
 		tp.set(this->tp_watchdog, tp.now());
 		tp.set(this->tp_slewrate, tp.now());
+
 		return true;
 	}
 	else

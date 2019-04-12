@@ -61,6 +61,7 @@ struct MOTOR
 	uint8_t		freq_khz;
 	int8_t		pwm;
 	int8_t		pwm_target;
+	uint8_t		pwm_data;
 	int16_t 	enc;
 
 	bool		slew;
