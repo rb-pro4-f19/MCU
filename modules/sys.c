@@ -24,7 +24,7 @@
 
 /*****************************   Constants   *******************************/
 
-#define SYSTICK_DUR_MS		1		// ms
+#define SYSTICK_DUR_MS		1000	// ms
 #define DEFAULT_MOT_FREQ	80		// kHz
 
 #define UPDATE_TP_CALI		10		// ms
@@ -86,7 +86,7 @@ static void SYSTEM_init(void)
 
 	// init SysTick
 	sys_tick_init(SYSTICK_DUR_MS);
-	tp.init_systick(SYSTICK_DUR_MS, ms);
+	tp.init_systick(SYSTICK_DUR_MS, us);
 
 	// init UART @ 9600 baud
 	uart_main = uart.new(BAUD_9600);
