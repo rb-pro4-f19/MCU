@@ -1,4 +1,4 @@
-t#include "driver.h"
+#include "driver.h"
 
 // Missing definitions in tm4c123gh6pm.h file
 #define NVIC_INT_CTRL_PEND_SYST   0x04000000  // Pend a systick int
@@ -48,12 +48,12 @@ bool get_irq(void)
 	return irq_status;
 }
 
-static int set_systick_reload_value(uint16_t tick_period_os)
+static int set_systick_reload_value(uint16_t tick_period_us)
 {
-	return tick_period_os * 16;
+	return tick_period_us * 16;
 }
 
-void sys_tick_init(uint16_t tick_period)
+void sys_tick_init(uint16_t tick_period_us)
 {
 
 #ifndef _MSC_VER
@@ -62,10 +62,10 @@ void sys_tick_init(uint16_t tick_period)
 	NVIC_ST_CTRL_R &=  ~(NVIC_ST_CTRL_ENABLE);
 
 	// tick_period = SYSTICK_RELOAD_VALUE 3199999 // 200 mS
-	NVIC_ST_CURRENT_R = set_systick_reload_value(tick_period_os);
+	NVIC_ST_CURRENT_R = set_systick_reload_value(tick_period_us);
 
 	// Set Reload value, Systick reload register
-	NVIC_ST_RELOAD_R = set_systick_reload_value(tick_period_os);
+	NVIC_ST_RELOAD_R = set_systick_reload_value(tick_period_us);
 
 	// On a write, removes the pending state from the SysTick exception s. 159
 	NVIC_INT_CTRL_R |= NVIC_INT_CTRL_UNPEND_SYST;
@@ -83,6 +83,6 @@ void sys_tick_init(uint16_t tick_period)
 #else
 
 	return;
-	
+
 #endif
 }

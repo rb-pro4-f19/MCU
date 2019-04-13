@@ -7,4 +7,4 @@ extern void     __enable_irq(void);
 extern bool     __disable_irq(void);
 
 extern bool  	get_irq(void);
-extern void     sys_tick_init(uint32_t tick_period);
+extern void     sys_tick_init(uint16_t tick_period_us);
