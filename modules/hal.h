@@ -4,7 +4,7 @@
 *
 * FILENAME...:	hal.h
 * MODULENAME.:	HAL
-* API........:	https://git.io/fjLSM
+* API........:	https://git.io/fjmGC
 * VERSION....:	1.0.0
 *
 * DESCRIPTION:	An example module. This might have a lengthy description, in
@@ -44,14 +44,14 @@ extern struct HAL_CLASS
 
 } hal;
 
+/*****************************    Constructs   *****************************/
+
 enum HAL_VAL
 {
 	HAL_LOW,
 	HAL_HIGH,
 	HAL_FAULT
 };
-
-/*****************************    Constructs   *****************************/
 
 struct HAL
 {
