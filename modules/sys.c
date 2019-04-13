@@ -221,7 +221,8 @@ static void SYSTEM_get_hal(SPI_ADDR hal_addr)
 
 static void _SYSTEM_MODE_calibration(void)
 {
-	// static variables
+	// static variables 
+  // why are they not declared?
 	static int16_t	mot1_enc_cur, mot1_enc_prev;
 	static CAL_MODE	cal_state = CAL_RESET;
 
@@ -286,6 +287,11 @@ static void _SYSTEM_MODE_calibration(void)
 
 			// !!!!
 			// implement redundancy check.. counter or shiftreg
+      
+
+      // save the encoder value here, since this is the "best reference"
+      // possible 
+      // mot1_enc_cur   = 0;
 
 			// reverse motor direction and begin seeking for hall sensor
 			mot.set_pwm(mot1, CAL_PAN_SEEK_HAL_PWM);
@@ -350,6 +356,8 @@ static void _SYSTEM_MODE_calibration(void)
 		case CAL_FINISH:
 		{
 			// finish it up, Bob!
+      // for this to be an actual calibration the encoder values should be read
+      // and saved here. 
 			sys.is_cal = true;
 			sys.state = SYS_IDLE;
 
