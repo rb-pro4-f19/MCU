@@ -10,7 +10,8 @@
 
 #### Added
 - Add `.get_hal()` method + `CMD_TABLE` entry.
-- 
+- Add `.set_mode()` method + `CMD_TABLE` entry.
+-
 #### Changed
 - Implemented new methods from SYS module into `CMD_TABLE`.
 

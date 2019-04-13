@@ -23,21 +23,21 @@ int main(void)
 	CMD_TABLE
 	{
 		{ UART_GET, {
-			{ 0x00, CLI_LAMBDA({ sys.echo(); }) },
-			{ 0x01, CLI_LAMBDA({ sys.get_enc(args[0]); }) },
-			{ 0x02, CLI_LAMBDA({ sys.get_hal(args[0]); }) },
+			{ 0x00, CLI_LAMBDA({ sys.echo(); 						}) },
+			{ 0x01, CLI_LAMBDA({ sys.get_enc(args[0]); 				}) },
+			{ 0x02, CLI_LAMBDA({ sys.get_hal(args[0]); 				}) },
 		}},
 
 		{ UART_SET, {
-			{ 0x00, NULL },
-			{ 0x01, CLI_LAMBDA({ sys.set_pwm(args[0], args[1]); }) },
-			{ 0x02, CLI_LAMBDA({ sys.set_freq(args[0], args[1]); }) }
+			{ 0x00, CLI_LAMBDA({ sys.set_mode(args[0]); 			}) },
+			{ 0x01, CLI_LAMBDA({ sys.set_pwm( args[0], args[1]); 	}) },
+			{ 0x02, CLI_LAMBDA({ sys.set_freq(args[0], args[1]); 	}) }
 		}}
 	};
 
 	/** Initialization *****************************************************/
 
-	    sys.init();
+	sys.init();
 
 	/** Loop ***************************************************************/
 
