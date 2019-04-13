@@ -38,6 +38,7 @@ Text.
 - Add `.set_freq()` method.
 - Add `.get_enc()` method.
 - Add `.get_hal()` method.
+- Add `.set_mode()` method.
 - Add `_SYSTEM_MODE_calibration()` method + defines.
 
 #### Changed

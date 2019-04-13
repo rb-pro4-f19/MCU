@@ -187,10 +187,16 @@ static void	SYSTEM_echo(void)
 	cli.log("Got a frame, echoing back.");
 }
 
+static void SYSTEM_set_mode(SYS_MODE mode)
+{
+	sys.mode = mode;
+	cli.logf("System mode set to %d.", mode);
+}
+
 static void SYSTEM_set_pwm(SPI_ADDR mot_addr, int8_t pwm)
 {
-    mot.set_pwm(mot_addr == MOT1 ? mot1 : mot0, pwm);
-    cli.logf("PWM of MOT%u was set to %d.", mot_addr - 1, pwm);
+	mot.set_pwm(mot_addr == MOT1 ? mot1 : mot0, pwm);
+	cli.logf("PWM of MOT%u was set to %d.", mot_addr - 1, pwm);
 }
 
 static void SYSTEM_set_freq(SPI_ADDR mot_addr, uint8_t freq_khz)
