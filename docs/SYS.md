@@ -37,9 +37,14 @@ Text.
 - Add `.set_pwm()` method.
 - Add `.set_freq()` method.
 - Add `.get_enc()` method.
+- Add `.get_hal()` method.
+- Add `_SYSTEM_MODE_calibration()` method + defines.
 
 #### Changed
-- Nothing yet.
+- Overhaul to calibration method; mostly semantic changes.
+- Prefixed `SYS_MODE` enum members with `SYS_`.
+- Changed SYSTICK duration constant to microseconds (us) unit + implemented new `sys_tick_init()` method.
+- Changed default SYSTICK duration to `500 us`.
 
 <!-- #### Known Issues -->
 
@@ -54,9 +59,9 @@ Text.
 ### [1.1.0] - 2019-04-11
 
 #### Added
-- Added Calibration enum
-- Added abs ternary function
 - Added Calibration to SYS class.
+- Added calibration enum.
+- Added `abs()` ternary macro.
 
 <!-- ----------------------------------------------------------------------------------------- -->
 

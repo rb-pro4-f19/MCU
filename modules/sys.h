@@ -32,7 +32,7 @@
 /*****************************    Defines    *******************************/
 
 typedef enum	SYS_MODE SYS_MODE;
-typedef enum	CALI_MODES CALI_MODES;
+typedef enum	CAL_MODE CAL_MODE;
 
 /***********************     External Variables     ************************/
 
@@ -40,10 +40,8 @@ extern SPI*			spi_main;
 extern UART*		uart_main;
 extern MOTOR*		mot0;
 extern MOTOR*		mot1;
-extern HAL*		hal0;
-extern HAL*		hal1;
-
-extern CALI_MODES	cur_cali;
+extern HAL*			hal0;
+extern HAL*			hal1;
 
 /*****************************   Constants   *******************************/
 
@@ -51,19 +49,25 @@ extern CALI_MODES	cur_cali;
 
 enum SYS_MODE
 {
-	IDLE,
-	CALIBRATION,
-	TUNING,
-	OPERATION
+	SYS_IDLE,
+	SYS_CALIBRATION,
+	SYS_TUNING,
+	SYS_OPERATION
 };
 
-enum CALI_MODES
+enum CAL_MODE
 {
-	CALI_TURN_OFF,
-    CALI_GOMAX_MOT1,
-    CALI_STOP_MOT1,
-    CALI_MOT1,
-    CALI_STOP_MOT0
+	CAL_RESET,
+
+	CAL_PAN_INIT,
+	CAL_PAN_SEEK_BOUNDARY,
+	CAL_PAN_SEEK_HAL,
+
+	CAL_TILT_INIT,
+	CAL_TILT_SEEK_HAL,
+	CAL_TILT_FINETUNE,
+
+	CAL_FINISH
 };
 
 /*************************    Class Functions    ***************************/
@@ -75,7 +79,7 @@ extern struct SYSTEM_CLASS
 	bool		is_cal;
 	bool		is_init;
 
-	TIMEPOINT*	tp_sys;
+	TIMEPOINT*	tp_cal;
 
 	void		(* const init)(void);
 	void		(* const operate)(void);
@@ -87,7 +91,8 @@ extern struct SYSTEM_CLASS
 	void 		(* const set_enc)(uint8_t ticks);
 	void		(* const set_mode)(SYS_MODE mode);
 
-	void 		(* const get_enc)(SPI_ADDR mot_addr);
+	void 		(* const get_enc)(SPI_ADDR enc_addr);
+	void 		(* const get_hal)(SPI_ADDR hal_addr);
 } sys;
 
 /****************************** End Of Module ******************************/
