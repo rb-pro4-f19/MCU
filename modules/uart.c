@@ -22,8 +22,9 @@
 
 /*****************************   Constants   *******************************/
 
-#define SYSCLK 			16000000
-#define RX_TIMEOUT_MS 	1000
+#define SYSCLK 				16000000
+#define RX_TIMEOUT_MS 		1000
+#define MAX_PAYLOAD_SIZE 	256
 
 /*****************************   Variables   *******************************/
 
@@ -36,6 +37,7 @@ static UART_FRAME*	UART_newframe(void);
 static void 		UART_delframe(UART_FRAME* this);
 
 static void 		UART_send(UART* this, UART_FRAME_TYPE type, uint8_t* payload, uint8_t payload_size);
+static void 		UART_stream(UART* this, const void* obj, size_t obj_size);
 static bool			UART_read(UART* this, UART_FRAME* frame, bool send_ack);
 
 static void 		_UART_init(UART_BAUDRATE baudrate);
@@ -55,6 +57,7 @@ const struct UART_CLASS uart =
 	.delframe		= &UART_delframe,
 
 	.send			= &UART_send,
+	.stream 		= &UART_stream,
 	.read			= &UART_read
 };
 
@@ -82,7 +85,7 @@ static void UART_del(UART* this)
 	free(this);
 }
 
-static UART_FRAME*	UART_newframe()
+static UART_FRAME* UART_newframe()
 {
 	// allocate memory
 	UART_FRAME* this = malloc(sizeof(UART_FRAME));
@@ -132,10 +135,10 @@ static void _UART_init(UART_BAUDRATE baudrate)
 	SYSCTL_RCGC1_R 		|= SYSCTL_RCGC1_UART0;
 
 	// disable UART
-    UART0_CTL_R         = 0;
+	UART0_CTL_R         = 0;
 
 	// set baudrate
-    _UART_set_baudrate(baudrate);
+	_UART_set_baudrate(baudrate);
 
 	//  WLEN IS 8 bit, FIFO mode, 1 stop bit - no parity
 	UART0_LCRH_R        =  ( 0x3 << 5) | (1 << 4);
@@ -172,6 +175,30 @@ static void UART_send(UART* this, UART_FRAME_TYPE type, uint8_t* payload, uint8_
 	{
 		_UART_transmit(tx_buffer[i]);
 	}
+}
+
+static void UART_stream(UART* this, const void* obj, size_t obj_size)
+{
+	// send initial UART_STREAM frame of size 2
+	// to reset uart callback in CLI program
+	static const size_t tx_size = STREAM_CMD_FRAME;
+	uint8_t tx_data[STREAM_CMD_FRAME] = {0};
+
+	uart.send(this, UART_STREAM, &tx_data, tx_size);
+
+	// iterate bytes of object and send them individually
+	const uint8_t* byte;
+	for (byte = obj; obj_size--; ++byte)
+	{
+		//printf("%02X", *byte);
+		uart.send(this, UART_STREAM, byte, 1);
+	}
+
+	// very unoptimal to transmit each byte "individually"
+	// but protocol does not support larger sizes
+
+	// uint8_t byte_buffer[MAX_PAYLOAD_SIZE];
+	// memcpy(byte_buffer, &object, size);
 }
 
 static bool UART_read(UART* this, UART_FRAME* frame, bool send_ack)

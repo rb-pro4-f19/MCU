@@ -30,6 +30,7 @@ typedef struct  UART UART;
 typedef struct	UART_FRAME UART_FRAME;
 typedef enum    UART_FRAME_TYPE UART_FRAME_TYPE;
 typedef enum    UART_BAUDRATE UART_BAUDRATE;
+typedef enum	STREAM_FRAME_SIZE STREAM_FRAME_SIZE;
 
 /***********************     External Variables     ************************/
 
@@ -46,6 +47,7 @@ extern const struct UART_CLASS
 	void 		(*delframe)(UART_FRAME* frame);
 
 	void 		(*send)(UART* this, UART_FRAME_TYPE type, uint8_t* payload, uint8_t payload_size);
+	void 		(*stream)(UART* this, const void* obj, size_t obj_size);
 	bool		(*read)(UART* this, UART_FRAME* frame, bool send_ack);
 } uart;
 
@@ -77,6 +79,12 @@ struct UART_FRAME
 	uint8_t 		payload_size : 5;
 	uint8_t* 		payload;
 	uint8_t 		chksum;
+};
+
+enum STREAM_FRAME_SIZE
+{
+	STREAM_DAT_FRAME = 1,
+	STREAM_CMD_FRAME = 2
 };
 
 struct UART
