@@ -53,21 +53,26 @@ static void			SYSTEM_echo(void);
 static void 		SYSTEM_set_mode(SYS_MODE mode);
 static void 		SYSTEM_set_pwm(SPI_ADDR mot_addr, int8_t pwm);
 static void 		SYSTEM_set_freq(SPI_ADDR mot_addr, uint8_t freq_khz);
+static void 		SYSTEM_set_gui(bool option);
 //static void 		SYSTEM_set_pos(uint8_t theta);
 //static void 		SYSTEM_set_enc(uint8_t ticks);
 
 static void 		SYSTEM_get_enc(SPI_ADDR enc_addr);
 static void 		SYSTEM_get_hal(SPI_ADDR hal_addr);
 
+static void 		_SYSTEM_to_gui(void);
 static void 		_SYSTEM_MODE_calibration(void);
 
 /****************************   Class Struct   *****************************/
 
 struct SYSTEM_CLASS sys =
 {
-	.state			= SYS_IDLE,
+	.mode			= SYS_IDLE,
+
 	.is_init		= false,
 	.is_cal			= false,
+	.to_gui			= true,
+
 	.tp_cal			= NULL,
 
 	.init			= &SYSTEM_init,
@@ -76,7 +81,7 @@ struct SYSTEM_CLASS sys =
 
 	.set_pwm		= &SYSTEM_set_pwm,
 	.set_freq 		= &SYSTEM_set_freq,
-	.set_mode		= NULL,
+	.set_mode		= &SYSTEM_set_mode,
 	.set_pos		= NULL,
 	.set_enc		= NULL,
 
@@ -125,9 +130,9 @@ static void SYSTEM_init(void)
 	// setup TIMEPOINTS
 	sys.tp_cal = tp.new();
 
-	// update variables and state
+	// update variables and system mode
 	sys.is_init = true;
-	sys.state = SYS_IDLE;
+	sys.mode = SYS_IDLE;
 
 	// enable interrupts
 	__enable_irq();
@@ -137,7 +142,12 @@ static void SYSTEM_init(void)
 
 static void SYSTEM_operate(void)
 {
-	switch (sys.state)
+
+	// send data to GUI if enabled
+	if (sys.to_gui)	{ _SYSTEM_to_gui(); }
+
+	// finite state machine
+	switch (sys.mode)
 	{
 
 		case SYS_IDLE:
@@ -173,7 +183,7 @@ static void SYSTEM_operate(void)
 
 		default:
 		{
-			sys.state = SYS_IDLE;
+			sys.mode = SYS_IDLE;
 			break;
 		}
 
@@ -191,6 +201,12 @@ static void SYSTEM_set_mode(SYS_MODE mode)
 {
 	sys.mode = mode;
 	cli.logf("System mode set to %d.", mode);
+}
+
+static void SYSTEM_set_gui(bool option)
+{
+	sys.to_gui = option;
+	cli.logf("GUI was %s.", option ? "enabled" : "disabled");
 }
 
 static void SYSTEM_set_pwm(SPI_ADDR mot_addr, int8_t pwm)
@@ -219,10 +235,56 @@ static void SYSTEM_get_hal(SPI_ADDR hal_addr)
 
 /****************************   System Modes   *****************************/
 
+static void _SYSTEM_to_gui(void)
+{
+	// flow control
+	;
+
+	// populate GUI data array
+	static GUI_DATA gui_data;
+
+	// operation data
+	gui_data.mode = sys.mode;
+
+	// motor0 data
+	gui_data.mot0 = (MOT_DATA)
+	{
+		.pwm		= 0x00,
+		.freq		= 0x00,
+		.enc		= 0x00,
+		.spd		= 0x00,
+		.hal		= 0x00,
+		.pid_i		= 0x00,
+		.pid_n		= 0x00,
+		.pid_kp		= 0x00,
+		.pid_ki		= 0x00,
+		.pid_kd		= 0x00,
+	};
+
+	// motor1 data
+	gui_data.mot1 = (MOT_DATA)
+	{
+		.pwm		= 0x00,
+		.freq		= 0x00,
+		.enc		= 0x00,
+		.spd		= 0x00,
+		.hal		= 0x00,
+		.pid_i		= 0x00,
+		.pid_n		= 0x00,
+		.pid_kp		= 0x00,
+		.pid_ki		= 0x00,
+		.pid_kd		= 0x00,
+	};
+
+	// stream data
+	uart.stream(uart_main, &gui_data, sizeof(gui_data));
+}
+
 static void _SYSTEM_MODE_calibration(void)
 {
-	// static variables 
-  // why are they not declared?
+	// static variables
+	// why are they not declared? -> because static implies zero-initialization, unless
+	// otherwise specified
 	static int16_t	mot1_enc_cur, mot1_enc_prev;
 	static CAL_MODE	cal_state = CAL_RESET;
 
@@ -287,11 +349,10 @@ static void _SYSTEM_MODE_calibration(void)
 
 			// !!!!
 			// implement redundancy check.. counter or shiftreg
-      
 
-      // save the encoder value here, since this is the "best reference"
-      // possible 
-      // mot1_enc_cur   = 0;
+			// save the encoder value here, since this is the "best reference"
+			// possible
+			// mot1_enc_cur   = 0;
 
 			// reverse motor direction and begin seeking for hall sensor
 			mot.set_pwm(mot1, CAL_PAN_SEEK_HAL_PWM);
@@ -356,10 +417,10 @@ static void _SYSTEM_MODE_calibration(void)
 		case CAL_FINISH:
 		{
 			// finish it up, Bob!
-      // for this to be an actual calibration the encoder values should be read
-      // and saved here. 
+			// for this to be an actual calibration the encoder values should be read
+			// and saved here.
 			sys.is_cal = true;
-			sys.state = SYS_IDLE;
+			sys.mode = SYS_IDLE;
 
 			return;
 		}

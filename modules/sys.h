@@ -33,6 +33,8 @@
 
 typedef enum	SYS_MODE SYS_MODE;
 typedef enum	CAL_MODE CAL_MODE;
+typedef struct	MOT_DATA MOT_DATA;
+typedef struct	GUI_DATA GUI_DATA;
 
 /***********************     External Variables     ************************/
 
@@ -70,14 +72,38 @@ enum CAL_MODE
 	CAL_FINISH
 };
 
+struct MOT_DATA
+{
+	uint8_t		pwm;
+	uint8_t		freq;
+	uint16_t	enc;
+	float		spd;
+	uint8_t		hal;
+
+	uint8_t		pid_i;
+	uint8_t		pid_n;
+	float		pid_kp;
+	float		pid_ki;
+	float		pid_kd;
+};
+
+struct GUI_DATA
+{
+	int			mode;
+
+	MOT_DATA	mot0;
+	MOT_DATA	mot1;
+};
+
 /*************************    Class Functions    ***************************/
 
 extern struct SYSTEM_CLASS
 {
-	SYS_MODE	state;
+	SYS_MODE	mode;
 
 	bool		is_cal;
 	bool		is_init;
+	bool		to_gui;
 
 	TIMEPOINT*	tp_cal;
 
