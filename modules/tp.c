@@ -34,19 +34,21 @@ static uint32_t		systick_dur_us;
 static TIMEPOINT*	TIMEPOINT_new(void);
 static void 		TIMEPOINT_del(TIMEPOINT* this);
 
-static void 		TIMEPOINT_systick(void);
+static inline void 	TIMEPOINT_systick(void);
 static void 		TIMEPOINT_init_systick(uint16_t duration, TP_UNIT unit);
 
 static inline void 	TIMEPOINT_reset(TIMEPOINT* this);
 static inline void 	TIMEPOINT_increment(TIMEPOINT* this, uint32_t value, TP_UNIT unit);
 static uint32_t		TIMEPOINT_convert_us(uint64_t value_us, TP_UNIT unit);
-static void 		TIMEPOINT_set(TIMEPOINT* this, uint16_t time_array[TIME_ARRAY_SIZE]);
+static inline void 	TIMEPOINT_set(TIMEPOINT* this, uint16_t time_array[TIME_ARRAY_SIZE]);
 static uint64_t		TIMEPOINT_get(TIMEPOINT* this, TP_UNIT unit);
 static uint16_t*	TIMEPOINT_get_array(TIMEPOINT* this);
 static uint16_t*	TIMEPOINT_now(void);
-static void 		TIMEPOINT_copy(TIMEPOINT* des, TIMEPOINT* src);
+static inline void 	TIMEPOINT_copy(TIMEPOINT* des, TIMEPOINT* src);
 static uint64_t 	TIMEPOINT_delta(TIMEPOINT* tp1, TIMEPOINT* tp2, TP_UNIT unit);
 static uint64_t 	TIMEPOINT_delta_now(TIMEPOINT* tp1, TP_UNIT unit);
+static uint64_t 	TIMEPOINT_measure(TP_MEASURE specifier, TP_UNIT unit);
+static uint64_t 	TIMEPOINT_lmeasure(void(*function)(void), TP_UNIT unit);
 
 /****************************   Class Struct   *****************************/
 
@@ -67,7 +69,9 @@ const struct TIMEPOINT_CLASS tp =
 	.now			= &TIMEPOINT_now,
 	.copy			= &TIMEPOINT_copy,
 	.delta			= &TIMEPOINT_delta,
-	.delta_now		= &TIMEPOINT_delta_now
+	.delta_now		= &TIMEPOINT_delta_now,
+	.measure 		= &TIMEPOINT_measure,
+	.lmeasure 		= &TIMEPOINT_lmeasure
 };
 
 /***********************   Constructive Functions   ************************/
@@ -104,7 +108,7 @@ static void TIMEPOINT_del(TIMEPOINT* this)
 
 /*****************************   Functions   *******************************/
 
-static void TIMEPOINT_systick(void)
+static inline void TIMEPOINT_systick(void)
 /****************************************************************************
 *   Input    : Pointer to TIMEPOINT instance.
 *   Function : Increment TIMEPOINT with a systick unit.
@@ -201,7 +205,7 @@ static uint32_t TIMEPOINT_convert_us(uint64_t value_us, TP_UNIT unit)
 	}
 }
 
-static void TIMEPOINT_set(TIMEPOINT* this, uint16_t time_array[TIME_ARRAY_SIZE])
+static inline void TIMEPOINT_set(TIMEPOINT* this, uint16_t time_array[TIME_ARRAY_SIZE])
 /****************************************************************************
 *   Input    : this: Pointer to TIMEPOINT instance.
 			   time_array[]: Array with new values.
@@ -263,9 +267,9 @@ static uint16_t* TIMEPOINT_now(void)
 	// disable interrupts if disabled
 	bool disabled_irq = __disable_irq();
 
-    // make copy of system time array
-    static uint16_t* sys_time_array_copy;
-    sys_time_array_copy = tp.get_array(tp_sys);
+	// make copy of system time array
+	static uint16_t* sys_time_array_copy;
+	sys_time_array_copy = tp.get_array(tp_sys);
 
 	// enable interrupts if they got disabled
 	if (disabled_irq) { __enable_irq(); }
@@ -274,7 +278,7 @@ static uint16_t* TIMEPOINT_now(void)
 	return sys_time_array_copy;
 }
 
-static void TIMEPOINT_copy(TIMEPOINT* des, TIMEPOINT * src)
+static inline void TIMEPOINT_copy(TIMEPOINT* des, TIMEPOINT * src)
 /****************************************************************************
 *   Input    : des, src = Pointers to TIMEPOINT instances.
 *   Function : Copy time_array from 'src' TIMEPOINT to 'des' TIMEPOINT.
@@ -290,10 +294,10 @@ static void TIMEPOINT_copy(TIMEPOINT* des, TIMEPOINT * src)
 static uint64_t TIMEPOINT_delta(TIMEPOINT* tp1, TIMEPOINT* tp2, TP_UNIT unit)
 /****************************************************************************
 *   Input    : tp1, tp2 = Pointers to TIMEPOINT instances.
-               unit = TP_UNIT to be used.
+			   unit = TP_UNIT to be used.
 *   Output   : Unsigned long long integer.
 *   Function : Calculate absolute delta duration between two TIMEPOINTs
-               given in unit defined by TP_UNIT.
+			   given in unit defined by TP_UNIT.
 ****************************************************************************/
 {
 	uint64_t tp1_us = tp.get(tp1, us);
@@ -307,10 +311,10 @@ static uint64_t TIMEPOINT_delta(TIMEPOINT* tp1, TIMEPOINT* tp2, TP_UNIT unit)
 static uint64_t TIMEPOINT_delta_now(TIMEPOINT* tp1, TP_UNIT unit)
 /****************************************************************************
 *   Input    : tp1 = Pointers to TIMEPOINT instances.
-               unit = TP_UNIT to be used.
+			   unit = TP_UNIT to be used.
 *   Output   : Unsigned long long integer.
 *   Function : Calculate absolute delta duration between two a TIMEPOINT
-               and the GLOBAL time in unit defined by TP_UNIT.
+			   and the GLOBAL time in unit defined by TP_UNIT.
 ****************************************************************************/
 {
 	// create temporary TIMEPOINT and set it to current time
@@ -318,6 +322,39 @@ static uint64_t TIMEPOINT_delta_now(TIMEPOINT* tp1, TP_UNIT unit)
 	tp.set(&tp_temp, tp.now());
 
 	return tp.delta(&tp_temp, tp1, unit);
+}
+
+static uint64_t	TIMEPOINT_measure(TP_MEASURE specifier, TP_UNIT unit)
+{
+	static TIMEPOINT tp_measure;
+
+	switch (specifier)
+	{
+		case TP_FROM:
+
+			tp.set(&tp_measure, tp.now());
+			break;
+
+		case TP_TO:
+
+			return tp.delta_now(&tp_measure, unit);
+
+	}
+
+	return 0;
+}
+
+static uint64_t TIMEPOINT_lmeasure(void(*function)(void), TP_UNIT unit)
+{
+	// create temporary TIMEPOINT and set it to current time
+	TIMEPOINT tp_measure;
+	tp.set(&tp_measure, tp.now());
+
+	// call method to measure
+	function();
+
+	// return elapsed time
+	return tp.delta_now(&tp_measure, unit);
 }
 
 /****************************** End Of Module ******************************/

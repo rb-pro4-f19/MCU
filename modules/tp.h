@@ -5,7 +5,7 @@
 * FILENAME...:	tp.h
 * MODULENAME.:	TIMEPOINT
 * DOCS.......:	https://git.io/fjJaE
-* VERSION....:	1.2.1
+* VERSION....:	1.3.0
 *
 * DESCRIPTION:	Timepoint is an instance used for tracking time, including
 				calculating delta, delta_systick etc.
@@ -26,6 +26,7 @@
 typedef struct  TIMEPOINT TIMEPOINT;
 typedef enum    TP_UNIT TP_UNIT;
 typedef enum    TP_TYPE TP_TYPE;
+typedef enum 	TP_MEASURE TP_MEASURE;
 
 /********************** External declaration of Variables ******************/
 
@@ -57,6 +58,8 @@ extern const struct TIMEPOINT_CLASS
 	void		(*copy)(TIMEPOINT* des, TIMEPOINT* src);
 	uint64_t	(*delta)(TIMEPOINT* tp1, TIMEPOINT* tp2, TP_UNIT unit);
 	uint64_t	(*delta_now)(TIMEPOINT* tp1, TP_UNIT unit);
+	uint64_t	(*measure)(TP_MEASURE specifier, TP_UNIT unit);
+	uint64_t	(*lmeasure)(void(*function)(void), TP_UNIT unit);
 } tp;
 
 /*****************************    Constructs   *****************************/
@@ -68,6 +71,12 @@ enum TP_UNIT
 	 s		= 2,     // 2 = seconds
 	 m		= 3,     // 3 = minutes
 	 h		= 4,     // 4 = hours
+};
+
+enum TP_MEASURE
+{
+	TP_FROM,
+	TP_TO
 };
 
 struct TIMEPOINT

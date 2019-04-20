@@ -12,7 +12,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque congue feugiat 
 ---
 
 ## Usage
-A demonstration of the TIMEPOINT class can be seen below (slightly outdated):
+A demonstration of the TIMEPOINT class can be seen below (outdated):
 
 ```cpp
 
@@ -57,10 +57,8 @@ Text.
 ### [Unreleased]
 
 #### Known Issues
-- Maximum `systick_dur_us` is ~65 μs, with no error checking on init.
-
-#### Changed
-- Update `.reset()` to not use `memset()`.
+- Maximum `systick_dur_us` is ~65000 μs, with no error checking on init.
+- Many unoptimized methods, such as `.delta_now()` (long calculations) or `.inc()` (recursion).
 
 <!-- #### Todo
 - Item. -->
@@ -69,11 +67,27 @@ Text.
 
 <!-- ----------------------------------------------------------------------------------------- -->
 
+### [1.3.0] - 2019-04-20
+
+#### Added
+- Add `TP_MEASURE` `enum`.
+- Add `.measure()` method.
+- Add `.lmeasure()` method (lambda measure).
+
+#### Changed
+- Update `.reset()` to not use `memset()`.
+- Minor performance updates; e.g. `inline` tags.
+- Updated known issues.
+
+---
+
+<!-- ----------------------------------------------------------------------------------------- -->
+
 ### [1.2.0] - 2019-03-20
 
 #### Added
-- `.convert_us()` method.
-- `.reset()` method (memset).
+- Add `.convert_us()` method.
+- Add `.reset()` method (memset).
 - Support for minutes and hours; reset after 24 hours.
 - Proper documentation
 
@@ -123,6 +137,8 @@ Text.
 <!-- ----------------------------------------------------------------------------------------- -->
 
 [Unreleased]: #changelog
+[1.4.0]: #changelog
+[1.3.0]: #changelog
 [1.2.0]: #changelog
 [1.1.0]: #changelog
 [1.0.0]: #changelog
