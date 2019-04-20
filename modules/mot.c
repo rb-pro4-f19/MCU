@@ -145,7 +145,6 @@ static bool	MOTOR_set_pwm(MOTOR* this, int8_t pwm)
 		// apply slewrate dy restrictions
 		// target < current = decrement ... target > current = increment
 		pwm = (this->pwm_target < this->pwm) ? (this->pwm - this->slew_dy) : (this->pwm + this->slew_dy);
-
 	}
 
 	// convert pwm to the FPGA format; MSB = direction
@@ -196,14 +195,13 @@ static bool MOTOR_set_freq(MOTOR* this, uint8_t freq_khz)
 static int16_t MOTOR_get_enc(MOTOR* this)
 {
 	static uint16_t enc_buf = 0;
-	static int16_t  enc_dat = 0;
 
 	if (spi.request(mot.spi_module, this->enc_addr, &enc_buf))
 	{
 		// replace most-significant nibble with 0 or 1 according to MSB of 12th bit
 		// 0000_1000_0101_0000 -> 1111_1000_0101_0000
-		enc_dat = (enc_buf & (1 << 11)) ? (enc_buf | 0xF000) : (enc_buf);
-		return enc_dat;
+		this->enc = (enc_buf & (1 << 11)) ? (enc_buf | 0xF000) : (enc_buf);
+		return this->enc;
 	}
 	else
 	{
