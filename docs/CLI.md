@@ -34,11 +34,24 @@ Text.
 ### [Unreleased]
 
 #### Known Issues
-
 - All `.log()` methods fail when used with payload > 32 chars; UART protocol wrongly defined.
 
 <!-- #### Todo
 - Item. -->
+
+---
+
+<!-- ----------------------------------------------------------------------------------------- -->
+
+### [1.2.0] - 2019-04-20
+
+#### Added
+- Add `CLI_MSG_MAXLEN` define.
+- Add `allow_msg` control variable to `cli`.
+
+#### Changed
+- Changed `.log()` & `.logf()` to `msg()` & `.msgf()`.
+- Removed size checks; now handled by UART.
 
 ---
 
@@ -67,6 +80,8 @@ Text.
 <!-- ----------------------------------------------------------------------------------------- -->
 
 [Unreleased]: #changelog
+[1.4.0]: #changelog
+[1.3.0]: #changelog
 [1.2.0]: #changelog
 [1.1.0]: #changelog
 [1.0.0]: #changelog

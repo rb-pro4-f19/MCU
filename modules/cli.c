@@ -31,8 +31,8 @@
 
 static void		CLI_init(CLI_TYPE* commands, UART* uart_module);
 static void		CLI_check();
-static void		CLI_log(const char* str);
-static void 	CLI_logf(const char* str, ...);
+static void		CLI_msg(const char* str);
+static void 	CLI_msgf(const char* str, ...);
 static void		CLI_parse_frame(UART_FRAME* frame);
 
 /****************************   Class Struct   *****************************/
@@ -42,10 +42,12 @@ struct CLI_CLASS cli =
 	.commands		= NULL,
 	.uart_module	= NULL,
 
+	.allow_msg		= true,
+
 	.init			= &CLI_init,
 	.check			= &CLI_check,
-	.log			= &CLI_log,
-	.logf			= &CLI_logf,
+	.msg			= &CLI_msg,
+	.msgf			= &CLI_msgf,
 	.parse_frame	= &CLI_parse_frame
 };
 
@@ -68,30 +70,30 @@ static void CLI_check()
 	}
 }
 
-static void	CLI_log(const char* str)
+static void	CLI_msg(const char* str)
 {
+	// check if logging is allowed
+	if (!cli.allow_msg) { return; }
+
 	// count number of chars
 	int16_t payload_size = -1;
 	while (str[++payload_size] != '\0' && payload_size < 256 + 1);
 
 	// check for maximum size
-	if (payload_size > 256)
-	{
-		return;
-	}
+	// now handled by the UART; message can be as long as desired, yet bounded by UART
 
 	// send frame
-	uart.send(cli.uart_module, UART_MSG, str, (uint8_t)payload_size);
+	uart.send(cli.uart_module, UART_MSG, str, (size_t)payload_size);
 }
 
-static void CLI_logf(const char* str, ...)
+static void CLI_msgf(const char* str, ...)
 {
 
 	// http://mylifeforthecode.com/creating-a-custom-printf-function-in-c/
 	// http://www.cplusplus.com/reference/cstdio/vsprintf/
 
 	va_list vargs;
-	static char str_buffer[257];
+	static char str_buffer[CLI_MSG_MAXLEN];
 
 	// construct formatted string from variadic args
 	va_start(vargs, str);
@@ -99,7 +101,7 @@ static void CLI_logf(const char* str, ...)
 	va_end(vargs);
 
 	// call regular log method w/ constructed string
-	cli.log(str_buffer);
+	cli.msg(str_buffer);
 }
 
 static void CLI_parse_frame(UART_FRAME* frame)

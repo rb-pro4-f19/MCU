@@ -5,10 +5,10 @@
 * FILENAME...:	cli.h
 * MODULENAME.:	CLI (static class)
 * DOCS.......:	https://git.io/fjJau
-* VERSION....:	1.1.0
+* VERSION....:	1.2.0
 *
 * DESCRIPTION:	Interaction with computer CLI using UART, including message
-				logging (send)  and command parsing (receieve).
+				logging (send) and command parsing (receieve).
 *
 ****************************************************************************/
 
@@ -26,6 +26,7 @@
 
 #define	CLI_MAX_TYPES		8
 #define	CLI_MAX_ACTIONS		8
+#define	CLI_MSG_MAXLEN		257
 
 /*****************************    Defines    *******************************/
 
@@ -61,11 +62,13 @@ extern struct CLI_CLASS
 	CLI_TYPE* 	commands;
 	UART*		uart_module;
 
-	void(* const init)(CLI_TYPE* commands, UART* uart_module); // optional
-	void(* const check)(void);
-	void(* const log)(const char* str);
-	void(* const logf)(const char* str, ...);
-	void(* const parse_frame)(UART_FRAME* frame);
+	bool 		allow_msg;
+
+	void 		(* const init)(CLI_TYPE* commands, UART* uart_module); // optional
+	void 		(* const check)(void);
+	void 		(* const msg)(const char* str);
+	void 		(* const msgf)(const char* str, ...);
+	void 		(* const parse_frame)(UART_FRAME* frame);
 } cli;
 
 /****************************** End Of Module ******************************/
