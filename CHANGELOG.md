@@ -4,16 +4,26 @@
 
 ### [Unreleased]
 
-#### Known Issues
-- UART protocol max payload size wrongly defined; maximum of `256 bytes` instead of `32 bytes`.
-- All `.log()` methods fail when used with payload > 32 chars.
+---
+
+<!-- ----------------------------------------------------------------------------------------- -->
+
+### [1.5.0] - 2019-04-20
 
 #### Added
 - Add `.get_hal()` method + `CMD_TABLE` entry.
 - Add `.set_mode()` method + `CMD_TABLE` entry.
--
+- Add `.set_msg()` method + `CMD_TABLE` entry.
+- Add `.set_gui()` method + `CMD_TABLE` entry.
+
 #### Changed
 - Implemented new methods from SYS module into `CMD_TABLE`.
+- Set optimization level to `-O1`.
+
+#### Fixed
+- Fixed "All `.log()` methods fail when used with payload > 32 chars"; message now gets truncated.
+- Fixed "UART protocol max payload size wrongly defined; maximum of `255 bytes` instead of `31 bytes`."; added correct defines.
+- Set initial value of  `irq_status = true` in `driver.c`; otherwise incorrect first invoke of `__enable_irq()`.
 
 ---
 

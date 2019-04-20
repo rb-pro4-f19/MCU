@@ -31,7 +31,9 @@ int main(void)
 		{ UART_SET, {
 			{ 0x00, CLI_LAMBDA({ sys.set_mode(args[0]); 			}) },
 			{ 0x01, CLI_LAMBDA({ sys.set_pwm( args[0], args[1]); 	}) },
-			{ 0x02, CLI_LAMBDA({ sys.set_freq(args[0], args[1]); 	}) }
+			{ 0x02, CLI_LAMBDA({ sys.set_freq(args[0], args[1]); 	}) },
+			{ 0x03, CLI_LAMBDA({ sys.set_gui(args[0]);              }) },
+			{ 0x04, CLI_LAMBDA({ sys.set_msg(args[0]);              }) }
 		}}
 	};
 
