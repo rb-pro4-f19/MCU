@@ -56,6 +56,7 @@ static HAL* HAL_new(SPI_ADDR hal_addr)
 
 	// initialize variables
 	this->hal_addr 	= hal_addr;
+	this->val 		= HAL_LOW;
 
 	// return pointer to instances
 	return this;
@@ -68,14 +69,15 @@ static void HAL_del(HAL* this)
 
 /*****************************   Functions   *******************************/
 
-static HAL_VAL HAL_read (HAL* this)
+static HAL_VAL HAL_read(HAL* this)
 {
 	static uint16_t hal_buf = 0;
 
 	if (spi.request(hal.spi_module, this->hal_addr, &hal_buf))
 	{
 		// hall sensor is active low
-		return (( hal_buf >> 0 ) & 1U) ? HAL_LOW : HAL_HIGH;
+		this->val = ((hal_buf >> 0) & 1U) ? HAL_LOW : HAL_HIGH;
+		return this->val;
 	}
 
 	return HAL_FAULT;

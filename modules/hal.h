@@ -4,8 +4,8 @@
 *
 * FILENAME...:	hal.h
 * MODULENAME.:	HAL
-* API........:	https://git.io/fjmGC
-* VERSION....:	1.0.0
+* API........:	https://git.io/fjO1i
+* VERSION....:	1.1.0
 *
 * DESCRIPTION:	An example module. This might have a lengthy description, in
 *				which case, we simply add some tabs.
@@ -48,15 +48,16 @@ extern struct HAL_CLASS
 
 enum HAL_VAL
 {
-	HAL_LOW,
-	HAL_HIGH,
-	HAL_FAULT
+	HAL_LOW		= 0,
+	HAL_HIGH 	= 1,
+	HAL_FAULT	= 2
 };
 
 struct HAL
 {
 	// public
 	SPI_ADDR 	hal_addr;
+	HAL_VAL		val;
 };
 
 /****************************** End Of Module ******************************/
