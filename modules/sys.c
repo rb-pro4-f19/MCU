@@ -22,11 +22,13 @@
 /*****************************    Defines    *******************************/
 
 //#define abs(X,Y,Z) ( (X > Y) ? (X - Y) > Z : (Y - X) > Z )
+#define LAMBDA(c_) ({ c_ _; })
 
 /*****************************   Constants   *******************************/
 
-#define SYSTICK_DUR_US				500		// us
+#define SYSTICK_DUR_US				100		// us
 #define DEFAULT_MOT_FREQ			80		// kHz
+#define GUI_UPDATE_DELAY			5	 	// ms
 
 #define CAL_PAN_SEEK_BOUNDARY_DUR	300		// ms
 #define CAL_PAN_SEEK_BOUNDARY_PWM	30
@@ -54,6 +56,7 @@ static void 		SYSTEM_set_mode(SYS_MODE mode);
 static void 		SYSTEM_set_pwm(SPI_ADDR mot_addr, int8_t pwm);
 static void 		SYSTEM_set_freq(SPI_ADDR mot_addr, uint8_t freq_khz);
 static void 		SYSTEM_set_gui(bool option);
+static void 		SYSTEM_set_msg(bool option);
 //static void 		SYSTEM_set_pos(uint8_t theta);
 //static void 		SYSTEM_set_enc(uint8_t ticks);
 
@@ -61,6 +64,9 @@ static void 		SYSTEM_get_enc(SPI_ADDR enc_addr);
 static void 		SYSTEM_get_hal(SPI_ADDR hal_addr);
 
 static void 		_SYSTEM_to_gui(void);
+static void         _SYSTEM_to_gui_bg(void);
+static inline void  _SYSTEM_fill_gui(void);
+
 static void 		_SYSTEM_MODE_calibration(void);
 
 /****************************   Class Struct   *****************************/
@@ -71,17 +77,24 @@ struct SYSTEM_CLASS sys =
 
 	.is_init		= false,
 	.is_cal			= false,
-	.to_gui			= true,
+	.to_gui			= false,
 
 	.tp_cal			= NULL,
+	.tp_gui			= NULL,
+	.tp_tst			= NULL,
+
+	.gui_data		= {},
+	.op_time	 	= 0,
 
 	.init			= &SYSTEM_init,
 	.operate		= &SYSTEM_operate,
 	.echo 			= &SYSTEM_echo,
 
+	.set_mode		= &SYSTEM_set_mode,
+	.set_gui		= &SYSTEM_set_gui,
+	.set_msg		= &SYSTEM_set_msg,
 	.set_pwm		= &SYSTEM_set_pwm,
 	.set_freq 		= &SYSTEM_set_freq,
-	.set_mode		= &SYSTEM_set_mode,
 	.set_pos		= NULL,
 	.set_enc		= NULL,
 
@@ -100,10 +113,10 @@ static void SYSTEM_init(void)
 	sys_tick_init(SYSTICK_DUR_US);
 	tp.init_systick(SYSTICK_DUR_US, us);
 
-	// init UART @ 9600 baud
-	uart_main = uart.new(BAUD_9600);
+	// init UART @ 921600 baud
+	uart_main = uart.new(BAUD_921600);
 
-	// init SPI @ 1 MHz (16 000 000 / 16)
+	// init SPI @ 1 MHz (16 000 000 / >16<)
 	spi_main = spi.new(16);
 
 	// assign UART module to CLI class
@@ -129,10 +142,15 @@ static void SYSTEM_init(void)
 
 	// setup TIMEPOINTS
 	sys.tp_cal = tp.new();
+	sys.tp_gui = tp.new();
+	sys.tp_tst = tp.new();
 
 	// update variables and system mode
 	sys.is_init = true;
 	sys.mode = SYS_IDLE;
+
+	// initialize GUI data
+	_SYSTEM_fill_gui();
 
 	// enable interrupts
 	__enable_irq();
@@ -144,7 +162,7 @@ static void SYSTEM_operate(void)
 {
 
 	// send data to GUI if enabled
-	if (sys.to_gui)	{ _SYSTEM_to_gui(); }
+	if (sys.to_gui)	{ _SYSTEM_to_gui_bg(); }
 
 	// finite state machine
 	switch (sys.mode)
@@ -174,9 +192,23 @@ static void SYSTEM_operate(void)
 
 		case SYS_OPERATION:
 		{
+
+			sys.op_time = tp.lmeasure(LAMBDA(void _(void)
+			{
+
 			// control motors (feed the watchdog, woof woof)
 			mot.operate(mot0);
 			mot.operate(mot1);
+
+			// read encoders
+			mot.get_enc(mot0);
+			mot.get_enc(mot1);
+
+			// read hall sensors
+			hal.read(hal0);
+			hal.read(hal1);
+
+			}), ms);
 
 			break;
 		}
@@ -194,90 +226,146 @@ static void SYSTEM_operate(void)
 
 static void	SYSTEM_echo(void)
 {
-	cli.log("Got a frame, echoing back.");
+	cli.msg("Hello world!");
 }
 
 static void SYSTEM_set_mode(SYS_MODE mode)
 {
 	sys.mode = mode;
-	cli.logf("System mode set to %d.", mode);
+	cli.msgf("Mode set to %d.", (uint8_t)mode);
 }
 
 static void SYSTEM_set_gui(bool option)
 {
 	sys.to_gui = option;
-	cli.logf("GUI was %s.", option ? "enabled" : "disabled");
+	cli.msgf("GUI was %s.", option ? "enabled" : "disabled");
+}
+
+static void SYSTEM_set_msg(bool option)
+{
+	cli.allow_msg = option;
+	cli.msgf("MSG was %s.", option ? "enabled" : "disabled");
 }
 
 static void SYSTEM_set_pwm(SPI_ADDR mot_addr, int8_t pwm)
 {
 	mot.set_pwm(mot_addr == MOT1 ? mot1 : mot0, pwm);
-	cli.logf("PWM of MOT%u was set to %d.", mot_addr - 1, pwm);
+	cli.msgf("PWM of MOT%u was set to %d.", mot_addr - 1, pwm);
 }
 
 static void SYSTEM_set_freq(SPI_ADDR mot_addr, uint8_t freq_khz)
 {
 	mot.set_freq(mot_addr == MOT1 ? mot1 : mot0, freq_khz);
-	cli.logf("FRQ of MOT%u was set to %d kHz.", mot_addr - 1, freq_khz);
+	cli.msgf("FRQ of MOT%u was set to %d kHz.", mot_addr - 1, freq_khz);
 }
 
 static void SYSTEM_get_enc(SPI_ADDR enc_addr)
 {
 	int16_t enc_dat =  mot.get_enc(enc_addr == ENC1 ? mot1 : mot0);
-	cli.logf("Delta of ENC%u is %d ticks.", enc_addr - 3, enc_dat);
+	cli.msgf("Delta of ENC%u is %d ticks.", enc_addr - 3, enc_dat);
 }
 
 static void SYSTEM_get_hal(SPI_ADDR hal_addr)
 {
 	bool hal_dat = hal.read(hal_addr == HAL1 ? hal1 : hal0);
-	cli.logf("Sensor HAL%u is %d.", hal_addr - 5, hal_dat);
+	cli.msgf("Sensor HAL%u is %d.", hal_addr - 5, hal_dat);
 }
 
 /****************************   System Modes   *****************************/
 
 static void _SYSTEM_to_gui(void)
 {
-	// flow control
-	;
+	// !!!
+	// DEPRECATED METHOD
+	// takes too long to transfer data.
 
-	// populate GUI data array
-	static GUI_DATA gui_data;
+	// flow control
+	if (tp.delta_now(sys.tp_gui, ms) < GUI_UPDATE_DELAY*2 ) { return; }
+
+	// populate GUI data
+	_SYSTEM_fill_gui();
+
+	// stream data
+	// 160 bytes @ 921600 bps = 1.4ms + overhead
+	uart.stream(uart_main, &sys.gui_data, sizeof(sys.gui_data));
+
+	// disable streaming
+	//sys.to_gui = false;
+
+	// reset timepoint
+	tp.set(sys.tp_gui, tp.now());
+}
+
+static void _SYSTEM_to_gui_bg(void)
+{
+	// flow control
+	if (tp.delta_now(sys.tp_gui, ms) < GUI_UPDATE_DELAY ) { return; }
+
+	// variables
+	static uint8_t* byte;
+	static size_t 	obj_size;
+
+	if (obj_size--)
+	// iterate bytes of object and send them individually
+	{
+		uart.send(uart_main, UART_STREAM, byte++, 1);
+		//if (obj_size == 0) { sys.to_gui = false; }
+	}
+	else
+	{
+		// populate GUI data
+		_SYSTEM_fill_gui();
+
+		// reset pointer and size
+		byte = (uint8_t*)(&sys.gui_data);
+		obj_size = sizeof(sys.gui_data);
+
+		// transmit reset frame
+		uart.send(uart_main, UART_STREAM, (uint8_t[2]){0}, 2);
+	}
+
+	// reset flowcontrol timepoint
+	tp.set(sys.tp_gui, tp.now());
+}
+
+static inline void _SYSTEM_fill_gui(void)
+{
+
+	static uint8_t demoval;
 
 	// operation data
-	gui_data.mode = sys.mode;
+	sys.gui_data.mode		= sys.mode;
+	//sys.gui_data.op_time	= sys.op_time;
 
 	// motor0 data
-	gui_data.mot0 = (MOT_DATA)
+	sys.gui_data.mot0 = (MOT_DATA)
 	{
-		.pwm		= 0x00,
-		.freq		= 0x00,
-		.enc		= 0x00,
-		.spd		= 0x00,
-		.hal		= 0x00,
-		.pid_i		= 0x00,
-		.pid_n		= 0x00,
-		.pid_kp		= 0x00,
-		.pid_ki		= 0x00,
-		.pid_kd		= 0x00,
+		.pwm		= mot0->pwm,
+		.freq		= mot0->freq_khz,
+		.enc		= mot0->enc,
+		.spd		= 5.2f,
+		.hal		= hal0->val,
+		.pid_i		= 1,
+		.pid_n		= 100,
+		.pid_kp		= 9.11f,
+		.pid_ki		= 7.5f,
+		.pid_kd		= 2.0f,
 	};
 
 	// motor1 data
-	gui_data.mot1 = (MOT_DATA)
+	sys.gui_data.mot1 = (MOT_DATA)
 	{
-		.pwm		= 0x00,
-		.freq		= 0x00,
-		.enc		= 0x00,
-		.spd		= 0x00,
-		.hal		= 0x00,
-		.pid_i		= 0x00,
-		.pid_n		= 0x00,
-		.pid_kp		= 0x00,
-		.pid_ki		= 0x00,
-		.pid_kd		= 0x00,
+		.pwm		= mot1->pwm,
+		.freq		= mot1->freq_khz,
+		.enc		= mot1->enc,
+		.spd		= 0,
+		.hal		= hal1->val,
+		.pid_i		= 1,
+		.pid_n		= 100,
+		.pid_kp		= 13.71f,
+		.pid_ki		= 6.66f,
+		.pid_kd		= 0.0f,
 	};
-
-	// stream data
-	uart.stream(uart_main, &gui_data, sizeof(gui_data));
 }
 
 static void _SYSTEM_MODE_calibration(void)
@@ -364,6 +452,9 @@ static void _SYSTEM_MODE_calibration(void)
 		case CAL_PAN_SEEK_HAL:
 		{
 			// check if hall sensor is reached; break if not
+
+			// !!!
+			// can break since disconnected sensors always return HIGH
 			if (hal.read(hal1) != HAL_HIGH) { break; }
 
 			// stop PAN motor and switch to calibrating TILT motor
@@ -411,15 +502,21 @@ static void _SYSTEM_MODE_calibration(void)
 			// stop motor
 			mot.set_pwm(mot0, 0);
 
+			// finish up
+			cal_state = CAL_FINISH;
+
 			break;
 		}
 
 		case CAL_FINISH:
 		{
 			// finish it up, Bob!
+
 			// for this to be an actual calibration the encoder values should be read
 			// and saved here.
+
 			sys.is_cal = true;
+			cal_state = CAL_RESET;
 			sys.mode = SYS_IDLE;
 
 			return;

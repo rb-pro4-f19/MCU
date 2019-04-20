@@ -5,7 +5,7 @@
 * FILENAME...:	sys.h
 * MODULENAME.:	SYSTEM
 * API........:	n/a
-* VERSION....:	1.0.0
+* VERSION....:	1.3.0
 *
 * DESCRIPTION:	An example module. This might have a lengthy description, in
 *				which case, we simply add some tabs.
@@ -74,7 +74,7 @@ enum CAL_MODE
 
 struct MOT_DATA
 {
-	uint8_t		pwm;
+	int8_t		pwm;
 	uint8_t		freq;
 	uint16_t	enc;
 	float		spd;
@@ -89,7 +89,7 @@ struct MOT_DATA
 
 struct GUI_DATA
 {
-	int			mode;
+	uint8_t		mode;
 
 	MOT_DATA	mot0;
 	MOT_DATA	mot1;
@@ -106,12 +106,19 @@ extern struct SYSTEM_CLASS
 	bool		to_gui;
 
 	TIMEPOINT*	tp_cal;
+	TIMEPOINT*	tp_gui;
+	TIMEPOINT*	tp_tst;
+
+	GUI_DATA 	gui_data;
+	uint16_t 	op_time;
 
 	void		(* const init)(void);
 	void		(* const operate)(void);
 	void		(* const echo)(void);
 
 	void		(* const set_mode)(SYS_MODE mode);
+	void		(* const set_gui)(bool option);
+	void		(* const set_msg)(bool option);
 	void 		(* const set_pwm)(SPI_ADDR mot_addr, int8_t pwm);
 	void 		(* const set_freq)(SPI_ADDR mot_addr, uint8_t freq_khz);
 	void 		(* const set_pos)(uint8_t theta);

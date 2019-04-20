@@ -16,7 +16,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque congue feugiat 
 <!-- ----------------------------------------------------------------------------------------- -->
 
 ## Usage
-A demonstration of the MOTOR class can be seen below:
+The `SYSTEM` class is to be called via CLI commands, such that a command table is populated with the appropriate commands. System operation is achieved by calling the `.operate()` method from a super-loop. A demonstration of the SYSTEM class can be seen below:
 
 ```cpp
 // WIP
@@ -32,6 +32,40 @@ Text.
 ## Changelog
 
 ### [Unreleased]
+- Nothing to see here, keep moving.
+
+---
+
+<!-- ----------------------------------------------------------------------------------------- -->
+
+### [1.3.0] - 2019-04-18
+
+#### Added
+- Add `GUI_DATA` + `MOT_DATA` constructs.
+- Add `to_gui` control variable to `sys` struct.
+- Add `gui_data` variable to `sys` struct.
+- Add `op_time` variable to `sys` struct + `tp.lmeasure()` in `SYS_OPERATION` case.
+- Add `tp_gui` + `tp_tst` timepoints to `sys` struct.
+- Add `_SYSTEM_fill_gui()` method.
+- Add ~~`_SYSTEM_to_gui()`~~ + `_SYSTEM_to_gui_bg()` method.
+- Add `.set_gui()` method.
+- Add `.set_msg()` method.
+-
+
+#### Changed
+- Renamed `.state` to `.mode` in `sys` struct.
+- Changed `UART` module to run at `BAUD_921600`.
+- Changed all `.logf()` to `.msgf()`.
+- Changed `.echo()` message to `"Hello world!"`.
+
+#### Fixed
+- Calibration method never exited last state; added transition to `CAL_FINISH`.
+
+---
+
+<!-- ----------------------------------------------------------------------------------------- -->
+
+### [1.2.0] - 2019-04-18
 
 #### Added
 - Add `.set_pwm()` method.
@@ -39,19 +73,13 @@ Text.
 - Add `.get_enc()` method.
 - Add `.get_hal()` method.
 - Add `.set_mode()` method.
-- Add `_SYSTEM_MODE_calibration()` method + defines.
+- Add `_SYSTEM_MODE_calibration()` method + state enum/defines.
 
 #### Changed
 - Overhaul to calibration method; mostly semantic changes.
 - Prefixed `SYS_MODE` enum members with `SYS_`.
 - Changed SYSTICK duration constant to microseconds (us) unit + implemented new `sys_tick_init()` method.
 - Changed default SYSTICK duration to `500 us`.
-
-<!-- #### Known Issues -->
-
-
-<!-- #### Todo
-- Item. -->
 
 ---
 
@@ -60,9 +88,12 @@ Text.
 ### [1.1.0] - 2019-04-11
 
 #### Added
-- Added Calibration to SYS class.
-- Added calibration enum.
-- Added `abs()` ternary macro.
+- Add calibration methods to `SYS` class.
+- Add calibration state `enum`.
+- ~~Add `abs()` ternary macro~~.
+
+
+---
 
 <!-- ----------------------------------------------------------------------------------------- -->
 
@@ -75,6 +106,9 @@ Text.
 <!-- ----------------------------------------------------------------------------------------- -->
 
 [Unreleased]: #changelog
+[1.5.0]: #changelog
+[1.4.0]: #changelog
+[1.3.0]: #changelog
 [1.2.0]: #changelog
 [1.1.0]: #changelog
 [1.0.0]: #changelog
