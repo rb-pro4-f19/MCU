@@ -24,7 +24,12 @@
 
 #define SYSCLK 				16000000
 #define RX_TIMEOUT_MS 		1000
-#define MAX_PAYLOAD_SIZE 	256
+
+#define MAX_TX_PAYLOAD_SIZE 31
+#define MAX_RX_PAYLOAD_SIZE 14
+
+#define MAX_TX_FRAME_SIZE	MAX_TX_PAYLOAD_SIZE + 2
+#define MAX_RX_FRAME_SIZE	MAX_TX_PAYLOAD_SIZE + 2
 
 /*****************************   Variables   *******************************/
 
@@ -36,7 +41,7 @@ static void			UART_del(UART* this);
 static UART_FRAME*	UART_newframe(void);
 static void 		UART_delframe(UART_FRAME* this);
 
-static void 		UART_send(UART* this, UART_FRAME_TYPE type, uint8_t* payload, uint8_t payload_size);
+static void 		UART_send(UART* this, UART_FRAME_TYPE type, const uint8_t* payload, size_t payload_size);
 static void 		UART_stream(UART* this, const void* obj, size_t obj_size);
 static bool			UART_read(UART* this, UART_FRAME* frame, bool send_ack);
 
@@ -151,11 +156,14 @@ static void _UART_init(UART_BAUDRATE baudrate)
 
 }
 
-static void UART_send(UART* this, UART_FRAME_TYPE type, uint8_t* payload, uint8_t payload_size)
+static void UART_send(UART* this, UART_FRAME_TYPE type, const uint8_t* payload, size_t payload_size)
 {
 	// construct array of max size:
 	// 1 byte header + 256 byte payload + 1 byte chksum
-	uint8_t tx_buffer[258] = {0};
+	static uint8_t tx_buffer[MAX_TX_FRAME_SIZE] = {0};
+
+	// boundary restriction
+	if (payload_size > MAX_TX_PAYLOAD_SIZE) { payload_size = MAX_TX_PAYLOAD_SIZE; }
 
 	// insert header
 	tx_buffer[0] = (type << 5) | (payload_size << 0);
@@ -179,12 +187,9 @@ static void UART_send(UART* this, UART_FRAME_TYPE type, uint8_t* payload, uint8_
 
 static void UART_stream(UART* this, const void* obj, size_t obj_size)
 {
-	// send initial UART_STREAM frame of size 2
+	// send initial, empty UART_STREAM frame of size 2
 	// to reset uart callback in CLI program
-	static const size_t tx_size = STREAM_CMD_FRAME;
-	uint8_t tx_data[STREAM_CMD_FRAME] = {0};
-
-	uart.send(this, UART_STREAM, &tx_data, tx_size);
+	uart.send(this, UART_STREAM, (uint8_t[2]){0}, 2);
 
 	// iterate bytes of object and send them individually
 	const uint8_t* byte;
@@ -196,9 +201,6 @@ static void UART_stream(UART* this, const void* obj, size_t obj_size)
 
 	// very unoptimal to transmit each byte "individually"
 	// but protocol does not support larger sizes
-
-	// uint8_t byte_buffer[MAX_PAYLOAD_SIZE];
-	// memcpy(byte_buffer, &object, size);
 }
 
 static bool UART_read(UART* this, UART_FRAME* frame, bool send_ack)
@@ -210,12 +212,12 @@ static bool UART_read(UART* this, UART_FRAME* frame, bool send_ack)
 	}
 
 	// initialize variables
-	static uint8_t 	rx_buffer[16];
+	static uint8_t 	rx_buffer[MAX_RX_FRAME_SIZE];
 	uint8_t 		rx_counter = 0;
 	bool 			rx_success = false;
 
 	// clear rx_buffer
-	for (int i = 0; i < 16; i++)
+	for (int i = 0; i < MAX_RX_FRAME_SIZE; i++)
 	{
 		rx_buffer[i] = 0;
 	}
@@ -270,7 +272,9 @@ static bool UART_read(UART* this, UART_FRAME* frame, bool send_ack)
 
 static void _UART_set_baudrate(UART_BAUDRATE baudrate)
 {
-	switch (baudrate) {
+	switch (baudrate)
+	{
+
 		case BAUD_1200:
 		{
 			// eq: uartclk / (16 * Baudrate) = BRD (Baud rate Divisor)
@@ -281,6 +285,7 @@ static void _UART_set_baudrate(UART_BAUDRATE baudrate)
 
 			break;
 		}
+
 		case BAUD_9600:
 		{
 			// eq: uartclk / (16 * Baudrate) = BRD (Baud rate Divisor)
@@ -288,8 +293,10 @@ static void _UART_set_baudrate(UART_BAUDRATE baudrate)
 
 			// decimal * 64 + 0.5 = (baud rate divisor frac)
 			UART0_FBRD_R        |= 11;
+
 			break;
 		}
+
 		case BAUD_14400:
 		{
 			// eq: uartclk / (16 * Baudrate) = BRD (Baud rate Divisor)
@@ -297,8 +304,10 @@ static void _UART_set_baudrate(UART_BAUDRATE baudrate)
 
 			// decimal * 64 + 0.5 = (baud rate divisor frac)
 			UART0_FBRD_R        |= 29;
+
 			break;
 		}
+
 		case BAUD_115200:
 		{
 			// eq: uartclk / (16 * Baudrate) = BRD (Baud rate Divisor)
@@ -306,6 +315,17 @@ static void _UART_set_baudrate(UART_BAUDRATE baudrate)
 
 			// decimal * 64 + 0.5 = (baud rate divisor frac)
 			UART0_FBRD_R        |= 44;
+
+			break;
+		}
+
+		case BAUD_921600:
+		{
+			// eq: uartclk / (16 * Baudrate) = BRD (Baud rate Divisor)
+			UART0_IBRD_R        |= 1;
+
+			// decimal * 64 + 0.5 = (baud rate divisor frac)
+			UART0_FBRD_R        |= 6;
 
 			break;
 		}

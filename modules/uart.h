@@ -4,8 +4,8 @@
 *
 * FILENAME...:	uart.h
 * MODULENAME.:	UART
-* API........:	https://goo.gl/pBQsgZ
-* VERSION....:	1.1.0
+* API........:	https://git.io/fjODi
+* VERSION....:	1.2.0
 *
 * DESCRIPTION:	UART serial communication module.
 *
@@ -46,7 +46,7 @@ extern const struct UART_CLASS
 	UART_FRAME*	(*newframe)();
 	void 		(*delframe)(UART_FRAME* frame);
 
-	void 		(*send)(UART* this, UART_FRAME_TYPE type, uint8_t* payload, uint8_t payload_size);
+	void 		(*send)(UART* this, UART_FRAME_TYPE type, const uint8_t* payload, size_t payload_size);
 	void 		(*stream)(UART* this, const void* obj, size_t obj_size);
 	bool		(*read)(UART* this, UART_FRAME* frame, bool send_ack);
 } uart;
@@ -55,10 +55,11 @@ extern const struct UART_CLASS
 
 enum UART_BAUDRATE
 {
-	BAUD_1200		= 0,
-	BAUD_9600		= 1,
-	BAUD_14400		= 2,
-	BAUD_115200		= 3
+	BAUD_1200,
+	BAUD_9600,
+	BAUD_14400,
+	BAUD_115200,
+	BAUD_921600
 };
 
 enum UART_FRAME_TYPE
