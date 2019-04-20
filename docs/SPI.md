@@ -48,11 +48,8 @@ Text.
 
 ### [Unreleased]
 
-<!-- #### Known Issues
-- Item -->
-
-<!-- #### Todo
-- Item. -->
+#### Known Issues
+- Error checking fails in `.send()` frame validation; if no frame received, the checksum of an empty frame will still return valid.
 
 ---
 
@@ -67,6 +64,7 @@ Text.
 #### Changed
 - Reverted multiple cases in `_SPI_init()`; switched to SSI3 module.
 - Minor optimizations and semantic updates.
+- **`[1.2.2] - 2019-04-20`** Made `.flush()` tagged `inline`.
 
 #### Fixed
 - spinlock in `_SPI_transmit()` was not blocking; changed to poll on `BSY` flag.

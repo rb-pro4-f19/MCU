@@ -67,7 +67,7 @@ static void 		SPI_del(SPI* this);
 
 static bool 		SPI_send(SPI* this, SPI_ADDR addr, uint8_t data);
 static bool		 	SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer);
-static void		 	SPI_flush(SPI* this);
+static inline void	SPI_flush(SPI* this);
 
 static void 		_SPI_init(uint8_t clkdiv);
 static void 		_SPI_transmit(SPI_FRAME* frame, bool spinlock);
@@ -207,14 +207,9 @@ static bool SPI_request(SPI* this, SPI_ADDR addr, uint16_t* buffer)
 	return false;
 }
 
-static void SPI_flush(SPI* this)
+static inline void SPI_flush(SPI* this)
 {
 	for (volatile uint32_t tmp = 0; SSI0_SR_R & (1 << RNE); tmp = SSI0_DR_R);
-
-	// do {
-	// 	volatile uint32_t temp_data = SSI0_DR_R;
-	// }
-	// while(SSI0_SR_R & (1 << RNE));
 }
 
 /*************************   Private Functions   ***************************/

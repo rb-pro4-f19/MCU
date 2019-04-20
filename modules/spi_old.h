@@ -5,7 +5,7 @@
 * FILENAME...:	spi.h
 * MODULENAME.:	SPI
 * DOCS.......:	https://git.io/fjJa2
-* VERSION....:	1.2.0
+* VERSION....:	1.2.2
 *
 * DESCRIPTION:	An example module. This might have a lengthy description, in
 *				which case, we simply add some tabs.
