@@ -375,6 +375,7 @@ static void _SYSTEM_MODE_calibration(void)
 	// otherwise specified
 	static int16_t	mot1_enc_cur, mot1_enc_prev;
 	static CAL_MODE	cal_state = CAL_RESET;
+	static uint8_t	reduc_check = 0;
 
 	// calibration state machine
 	switch (cal_state)
@@ -414,6 +415,7 @@ static void _SYSTEM_MODE_calibration(void)
 			mot.set_pwm(mot1, CAL_PAN_SEEK_BOUNDARY_PWM);
 			mot1_enc_cur = mot.get_enc(mot1);
 			cal_state = CAL_PAN_SEEK_BOUNDARY;
+			reduc_check = 0;
 
 			break;
 		}
@@ -433,7 +435,8 @@ static void _SYSTEM_MODE_calibration(void)
 			mot1_enc_cur  = mot.get_enc(mot1);
 
 			// check if motor is stuck; break if false
-			if (abs(mot1_enc_cur - mot1_enc_prev) != 0) { break; }
+			if (abs(mot1_enc_cur - mot1_enc_prev) != 0) { reduc_check = 0; break; }
+			if ( ++reduc_check < 4 ) { break; }
 
 			// !!!!
 			// implement redundancy check.. counter or shiftreg
