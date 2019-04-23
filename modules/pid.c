@@ -12,13 +12,7 @@
 
 /***************************** Include files *******************************/
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <malloc.h>
-#include "assert.h"
-
-#include "cli.h"
-#include "mot.h"
+#include "pid.h"
 
 /*****************************    Defines    *******************************/
 
@@ -28,16 +22,18 @@
 
 /************************  Function Declarations ***************************/
 
-static PID*			MOTOR_new(float Kp, float Ki, float Kd, float N);
-static void 		MOTOR_del(MOTOR* this);
+static void         PID_operate(PID* this, MOTOR* m_this);
+static PID*         PID_new(float Kp, float Ki, float Kd, float N);
+static void 		PID_del(PID* this);
 
 /****************************   Class Struct   *****************************/
 
-struct PID_CLASS mot =
+const struct PID_CLASS pid =
 {
 
 	.new			= &PID_new,
 	.del			= &PID_del,
+	.operate        = &PID_operate
 
 };
 
@@ -52,10 +48,15 @@ static PID* PID_new(float Kp, float Ki, float Kd, float N)
 	this->Ki = Ki;
 	this->Kd = Kd;
 	this->N  = N;
-	this->U[0] = 0;
-	this->U[1] = 0;
+	this->V[0] = 0;
+	this->V[1] = 0;
 	this->E[0] = 0;
 	this->E[1] = 0;
+	this->U  = 0;
+	this->Y  = 0;
+	this->R  = 0;
+	this->Ts = 0;
+	this->antiwindup = 0;
 
 	// return pointer to instance
 	return this;
@@ -68,10 +69,40 @@ static void PID_del(PID* this)
 
 /***********************   Constructive Functions   ************************/
 
-static void PID_operate(PID* this)
+static void PID_operate(PID* this, MOTOR* m_this)
 {
-	
+	// calculate new error
+	mot.get_enc(m_this);
+	this->Y = m_this->enc;
+	this->E[1] = this->E[0];
+	this->E[0] = this->R - this->Y;
+	this->V[1] = this->V[0];
 
+	if ( this->antiwindup == 0 )
+	{
+		this->V[0] = this->E[0]*( this->Kp + ( this->Ki * this->Ts / 2 ) ) + this->E[1]*( ( this->Ki * this->Ts / 2 ) - this->Kp ) + this->V[1];
+	}
+	else
+	{
+		this->V[0] = this->E[0]*( this->Kp ) + this->E[1]*( -(this->Kp) ) + this->V[1];
+	};
+
+	if ( this->V[0] > 127 )
+	{
+		this->V[0] = 127;
+		this->antiwindup = 1;
+	}
+	else if ( this->V[0] > -127 )
+	{
+		this->V[0] = 127;
+		this->antiwindup = 1;
+	}
+	else
+	{
+		this->antiwindup = 0;
+	}
+
+	mot.set_pwm(m_this,(int8_t)(this->V[0]));
 
 }
 

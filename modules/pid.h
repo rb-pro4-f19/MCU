@@ -12,12 +12,15 @@
 
 /***************************** Include files *******************************/
 
+#pragma once
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <malloc.h>
 #include <assert.h>
+#include "mot.h"
 
 /*****************************    Defines    *******************************/
 
@@ -25,13 +28,17 @@
 
 /*****************************   Variables   *******************************/
 
+typedef struct PID PID;
+
 /************************  Function Declarations ***************************/
 
-extern struct PID_CLASS
+extern const struct PID_CLASS
 {
 
 	PID* 			(* const new)(float Kp, float Ki, float Kd, float N);
 	void 			(* const del)(PID* this);
+	void            (* const operate)(PID* this, MOTOR* m_this);
+
 
 } pid;
 
@@ -40,12 +47,17 @@ extern struct PID_CLASS
 struct PID
 {
 
-	float Kp;
-	flaot Ki;
-	float Kd;
-	float N;
-	float U[2];
-	float E[2];
+    float Kp;
+    float Ki;
+    float Kd;
+    float N;
+    float V[2];
+    float E[2];
+    float U;
+    float Y;
+    float R;
+    float Ts;
+    bool antiwindup;
 
 };
 
