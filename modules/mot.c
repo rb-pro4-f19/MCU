@@ -24,11 +24,16 @@
 
 /*****************************   Constants   *******************************/
 
-#define WATCHDOG_TIMEOUT_US 800
+#define WATCHDOG_TIMEOUT_US 800		// us
 
 #define SLEWRATE_EN			true
 #define SLEWRATE_DY			1
-#define SLEWRATE_DX_US		10000
+#define SLEWRATE_DX_US		10000	// us
+
+#define ENC0_MAX			540		// tilt
+#define ENC1_MAX			230		// pin
+
+
 
 /*****************************   Variables   *******************************/
 
@@ -195,13 +200,22 @@ static bool MOTOR_set_freq(MOTOR* this, uint8_t freq_khz)
 static int16_t MOTOR_get_enc(MOTOR* this)
 {
 	static uint16_t enc_buf = 0;
+	static int16_t	enc_dat = 0;
 
 	if (spi.request(mot.spi_module, this->enc_addr, &enc_buf))
 	{
 		// replace most-significant nibble with 0 or 1 according to MSB of 12th bit
 		// 0000_1000_0101_0000 -> 1111_1000_0101_0000
-		this->enc = (enc_buf & (1 << 11)) ? (enc_buf | 0xF000) : (enc_buf);
-		return this->enc;
+		enc_dat = (enc_buf & (1 << 11)) ? (enc_buf | 0xF000) : (enc_buf);
+
+		// update stored encoder value
+		this->enc += enc_dat;
+
+		// modulate encoder value
+		//this->enc %= (this->enc_addr == ENC0) ? ENC0_MAX : ENC1_MAX;
+
+		// return the read delta encoder value
+		return enc_dat;
 	}
 	else
 	{
