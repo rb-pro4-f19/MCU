@@ -31,11 +31,11 @@
 #define GUI_UPDATE_DELAY			5	 	// ms
 
 #define CAL_PAN_SEEK_BOUNDARY_DUR	300		// ms
-#define CAL_PAN_SEEK_BOUNDARY_PWM	30
-#define CAL_PAN_SEEK_HAL_PWM		-20
-#define CAL_TILT_SEEK_HAL_PWM		30
-#define CAL_TILT_FINETUNE_PWM		-10
-#define CAL_TILT_FINETUNE_DUR		200		// ms
+#define CAL_PAN_SEEK_BOUNDARY_PWM	-30
+#define CAL_PAN_SEEK_HAL_PWM		24
+#define CAL_TILT_SEEK_HAL_PWM		-30
+#define CAL_TILT_FINETUNE_PWM		10
+#define CAL_TILT_FINETUNE_DUR		2000		// ms
 
 /*****************************   Variables   *******************************/
 
@@ -346,7 +346,7 @@ static inline void _SYSTEM_fill_gui(void)
 		.spd		= 5.2f,
 		.hal		= hal0->val,
 		.pid_i		= 1,
-		.pid_n		= 100,
+		.pid_n		= ++demoval,
 		.pid_kp		= 9.11f,
 		.pid_ki		= 7.5f,
 		.pid_kd		= 2.0f,
@@ -358,11 +358,11 @@ static inline void _SYSTEM_fill_gui(void)
 		.pwm		= mot1->pwm,
 		.freq		= mot1->freq_khz,
 		.enc		= mot1->enc,
-		.spd		= 0,
+		.spd		= 0.0f,
 		.hal		= hal1->val,
 		.pid_i		= 1,
-		.pid_n		= 100,
-		.pid_kp		= 13.71f,
+		.pid_n		= sys.op_time,
+		.pid_kp		= 13.71234f,
 		.pid_ki		= 6.66f,
 		.pid_kd		= 0.0f,
 	};
@@ -514,6 +514,14 @@ static void _SYSTEM_MODE_calibration(void)
 
 			// for this to be an actual calibration the encoder values should be read
 			// and saved here.
+
+			// clear encoder buffer
+			mot.get_enc(mot0);
+			mot.get_enc(mot1);
+
+			// reset stored encoder values
+			mot0->enc = 0;
+			mot1->enc = 0;
 
 			sys.is_cal = true;
 			cal_state = CAL_RESET;
