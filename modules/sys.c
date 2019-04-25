@@ -59,6 +59,8 @@ static void			SYSTEM_echo(void);
 
 static void 		SYSTEM_set_mode(SYS_MODE mode);
 //static void 		SYSTEM_set_pos(uint8_t theta);
+static void 		SYSTEM_set_pos_pan(float theta_pan);
+static void 		SYSTEM_set_pos_tilt(float theta_tilt);
 static void 		SYSTEM_set_gui(bool option);
 static void 		SYSTEM_set_msg(bool option);
 
@@ -101,6 +103,8 @@ struct SYSTEM_CLASS sys =
 
 	.set_mode		= &SYSTEM_set_mode,
 	.set_pos		= NULL,
+	.set_pos_pan	= &SYSTEM_set_pos_pan,
+	.set_pos_tilt	= &SYSTEM_set_pos_tilt,
 	.set_gui		= &SYSTEM_set_gui,
 	.set_msg		= &SYSTEM_set_msg,
 
@@ -249,6 +253,29 @@ static void SYSTEM_operate(void)
 }
 
 /***************************   System Calls   ******************************/
+
+static void 		SYSTEM_set_pos_pan(float theta_pan)
+{
+	// lets say there is an angle coming in 360 degree for the pan, it goes between
+	// 1080 / 360 -> encoder ticks relationship
+	// theta_pan = 1080 / 360 * theta_pan;
+	// if ( theta_pan >= 0)
+	//{
+	// theta_pan = (theta_pan > MOT1_BOUNDARY_H ? MOT1_BOUNDARY_H : theta_pan )
+		/* code */
+	//}
+	// theta_pan = (theta_pan >= 0) ? 1 : -1;
+	// enc_pos =
+	//  = theta_pan %
+
+}
+
+static void 		SYSTEM_set_pos_tilt(float theta_tilt)
+{
+
+
+
+}
 
 static void	SYSTEM_echo(void)
 {

@@ -131,6 +131,8 @@ extern struct SYSTEM_CLASS
 
 	void		(* const set_mode)(SYS_MODE mode);
 	void 		(* const set_pos)(uint8_t theta);
+	void		(* const set_pos_pan)(float theta_pan);
+	void		(* const set_pos_tilt)(float theta_tilt);
 	void		(* const set_gui)(bool option);
 	void		(* const set_msg)(bool option);
 
@@ -140,8 +142,6 @@ extern struct SYSTEM_CLASS
 	void		(* const set_bound)(bool option);
 
 	void 		(* const set_pid)(SPI_ADDR mot_addr, PID_PARAM param, uint8_t* flt_array);
-	// set slew
-	// set bound
 
 	void 		(* const get_enc)(SPI_ADDR enc_addr);
 	void 		(* const get_hal)(SPI_ADDR hal_addr);

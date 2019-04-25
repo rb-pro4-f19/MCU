@@ -38,6 +38,7 @@ extern const struct PID_CLASS
 	PID* 			(* const new)(float Kp, float Ki, float Kd, float N);
 	void 			(* const del)(PID* this);
 	void            (* const operate)(PID* this, MOTOR* m_this);
+	void            (* const operate_v2)(PID* this, MOTOR* m_this);
 
 
 } pid;
@@ -50,13 +51,15 @@ struct PID
     float Kp;
     float Ki;
     float Kd;
-    float N;
-    float V[2];
-    float E[2];
-    float U;
-    float Y;
-    float R;
+    float Tf;
+    float v[3];
+    float e[2];
+    float u;
+    float y[3];
+    float r[3];
     float Ts;
+	float b;
+	float c;
     bool antiwindup;
 
 };
