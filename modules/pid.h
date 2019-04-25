@@ -50,7 +50,7 @@ struct PID
     float Kp;
     float Ki;
     float Kd;
-    float N;
+    float Tf;
     float V[2];
     float E[2];
     float U;
