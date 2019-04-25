@@ -30,10 +30,10 @@
 #define SLEWRATE_DY			1
 #define SLEWRATE_DX_US		10000	// us
 
-#define ENC0_MAX			540		// tilt
-#define ENC1_MAX			230		// pin
+#define SPEED_EN			true
+#define SPEED_DX_MS			1		// ms
 
-
+#define BOUNDARY_TH			30
 
 /*****************************   Variables   *******************************/
 
@@ -44,6 +44,7 @@ static void 		MOTOR_del(MOTOR* this);
 
 static void 		MOTOR_operate(MOTOR* this);
 static inline void 	MOTOR_feed(MOTOR* this);
+static inline void 	_MOTOR_calc_speed(MOTOR* this);
 
 static bool 		MOTOR_set_pwm(MOTOR* this, int8_t pwm);
 static bool 		MOTOR_set_freq(MOTOR* this, uint8_t freq_khz);
@@ -84,16 +85,23 @@ static MOTOR* MOTOR_new(SPI_ADDR mot_addr, SPI_ADDR enc_addr, uint8_t freq_khz)
 
 	this->tp_watchdog	= tp.new();
 	this->tp_slewrate	= tp.new();
+	this->tp_speed		= tp.new();
 
 	this->freq_khz		= 0;
 	this->pwm 			= 0;
 	this->pwm_target	= 0;
 	this->pwm_data		= 0;
 	this->enc			= 0;
+	this->speed 		= 0.0f;
 
 	this->slew			= SLEWRATE_EN;
 	this->slew_dy		= SLEWRATE_DY;
 	this->slew_dx		= SLEWRATE_DX_US;
+
+	this->bound 		= false;
+	this->bound_l 		= 0;
+	this->bound_h 		= 0;
+	this->bound_max		= 0;
 
 	mot.set_freq(this, freq_khz);
 
@@ -116,6 +124,20 @@ static void MOTOR_operate(MOTOR* this)
 	if (tp.delta_now(this->tp_watchdog, us) > WATCHDOG_TIMEOUT_US)
 	{
 		mot.feed(this);
+	}
+
+	// check boundary safety if bounded
+	if (this->bound)
+	{
+		// upper boundary must be higher than lower
+		assert(this->bound_h > this->bound_l);
+
+		// check that encoder is within boundaries; break motors if not
+		// bound_l < enc < bound_h
+		if (!(this->enc > (this->bound_l + BOUNDARY_TH) && this->enc < (this->bound_h - BOUNDARY_TH)))
+		{
+			mot.set_pwm(this, 0);
+		}
 	}
 
 	// update slewrate pwm
@@ -211,8 +233,8 @@ static int16_t MOTOR_get_enc(MOTOR* this)
 		// update stored encoder value
 		this->enc += enc_dat;
 
-		// modulate encoder value
-		//this->enc %= (this->enc_addr == ENC0) ? ENC0_MAX : ENC1_MAX;
+		// encoder boundary rollover
+		if (!this->bound) { this->enc %= this->bound_max; }
 
 		// return the read delta encoder value
 		return enc_dat;
@@ -222,6 +244,20 @@ static int16_t MOTOR_get_enc(MOTOR* this)
 		// exception handling here
 		return 0;
 	}
+}
+
+static inline void _MOTOR_calc_speed(MOTOR* this)
+{
+	static int16_t prev_enc;
+
+	// sample time
+	if (tp.delta_now(this->tp_speed, ms) < SPEED_DX_MS) { return; }
+
+	// save previous encoder value
+	prev_enc = this->enc;
+
+	// calculate speed (dy/dx)
+	this->speed = abs(this->enc - prev_enc) / SPEED_DX_MS;
 }
 
 /****************************** End Of Module ******************************/

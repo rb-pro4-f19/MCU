@@ -42,7 +42,23 @@ Text.
 
 <!-- ----------------------------------------------------------------------------------------- -->
 
-### [1.2.1] - 2019-03-23
+### [1.3.0] - 2019-04-25
+
+#### Added
+- Add multiple encoder boundary variables to `MOTOR` `struct`.
+- Add encoder boundary check in `.operate()`.
+- Add encoder rollover in `.get_enc()`.
+- Add `speed` variable + `tp_speed` to `MOTOR` `struct`.
+- Add `_MOTOR_calc_speed()` method.
+
+#### Fixed
+- Encoded was not adding to stored value but saving the delta value in `.get_enc()`.
+
+---
+
+<!-- ----------------------------------------------------------------------------------------- -->
+
+### [1.2.2] - 2019-03-23
 
 #### Added
 - Slewrate protection in `.operate()` + `.set_pwm()`; controlled by `bool slew`.
