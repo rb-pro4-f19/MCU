@@ -4,6 +4,15 @@
 
 ### [Unreleased]
 
+#### Added
+- Add `.set_slew()` method + `CMD_TABLE` entry.
+- Add `.set_bound()` method + `CMD_TABLE` entry.
+- Add `.set_pid()` method + `CMD_TABLE` entry.
+
+#### Changed
+- Set optimization level to `-O0`.
+- Update `CMD_TABLE` to use new `enum` `CMD_ID`'s.
+
 ---
 
 <!-- ----------------------------------------------------------------------------------------- -->

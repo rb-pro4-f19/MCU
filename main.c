@@ -23,17 +23,21 @@ int main(void)
 	CMD_TABLE
 	{
 		{ UART_GET, {
-			{ 0x00, CLI_LAMBDA({ sys.echo(); 						}) },
-			{ 0x01, CLI_LAMBDA({ sys.get_enc(args[0]); 				}) },
-			{ 0x02, CLI_LAMBDA({ sys.get_hal(args[0]); 				}) },
+			{ GET_ECHO, 	CLI_LAMBDA({ sys.echo(); 								}) },
+			{ GET_ENC, 		CLI_LAMBDA({ sys.get_enc(args[0]); 						}) },
+			{ GET_HAL, 		CLI_LAMBDA({ sys.get_hal(args[0]); 						}) },
 		}},
 
 		{ UART_SET, {
-			{ 0x00, CLI_LAMBDA({ sys.set_mode(args[0]); 			}) },
-			{ 0x01, CLI_LAMBDA({ sys.set_pwm( args[0], args[1]); 	}) },
-			{ 0x02, CLI_LAMBDA({ sys.set_freq(args[0], args[1]); 	}) },
-			{ 0x03, CLI_LAMBDA({ sys.set_gui(args[0]);              }) },
-			{ 0x04, CLI_LAMBDA({ sys.set_msg(args[0]);              }) }
+			{ SET_MODE,		CLI_LAMBDA({ sys.set_mode(args[0]); 					}) },
+			{ SET_POS,      CLI_LAMBDA({ return;                                    }) },
+			{ SET_GUI,		CLI_LAMBDA({ sys.set_gui(args[0]);              		}) },
+			{ SET_MSG,		CLI_LAMBDA({ sys.set_msg(args[0]);              		}) },
+			{ SET_PWM,		CLI_LAMBDA({ sys.set_pwm(args[0], args[1]); 			}) },
+			{ SET_FREQ,		CLI_LAMBDA({ sys.set_freq(args[0], args[1]); 			}) },
+			{ SET_SLEW,		CLI_LAMBDA({ sys.set_slew(args[0]); 	         		}) },
+			{ SET_BOUND,	CLI_LAMBDA({ sys.set_bound(args[0]);              		}) },
+			{ SET_PID,		CLI_LAMBDA({ sys.set_pid(args[0], args[1], &args[2]);	}) },
 		}}
 	};
 
