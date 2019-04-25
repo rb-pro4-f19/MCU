@@ -34,12 +34,25 @@ Text.
 ### [Unreleased]
 - Nothing to see here, keep moving.
 
+---
+
+<!-- ----------------------------------------------------------------------------------------- -->
+
+### [1.4.0] - 2019-04-25
+
 #### Added
 - Add redundancy check defines.
 - Add boundary defines.
 - Add redundancy check in `_SYSTEM_MODE_calibration()` for `CAL_PAN_SEEK_BOUNDARY`.
 - Initialize motor boundary settings in `.init()`.
 - Included calibration check in `.operate()` for `SYS_OPERATION` state.
+- Add temporary define of `enum` `PID_PARAM`.
+- Add `.set_pos()` method.
+- Add `.set_slew()` method.
+- Add `.set_bound()` method.
+- Add `.set_pid()` method; still needs work.
+- Add link to API document in `sys.h`.
+
 
 #### Changed
 - Changed calibration defines; updated values.

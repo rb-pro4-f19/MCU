@@ -58,12 +58,16 @@ static void 		SYSTEM_operate(void);
 static void			SYSTEM_echo(void);
 
 static void 		SYSTEM_set_mode(SYS_MODE mode);
-static void 		SYSTEM_set_pwm(SPI_ADDR mot_addr, int8_t pwm);
-static void 		SYSTEM_set_freq(SPI_ADDR mot_addr, uint8_t freq_khz);
+//static void 		SYSTEM_set_pos(uint8_t theta);
 static void 		SYSTEM_set_gui(bool option);
 static void 		SYSTEM_set_msg(bool option);
-//static void 		SYSTEM_set_pos(uint8_t theta);
-//static void 		SYSTEM_set_enc(uint8_t ticks);
+
+static void 		SYSTEM_set_pwm(SPI_ADDR mot_addr, int8_t pwm);
+static void 		SYSTEM_set_freq(SPI_ADDR mot_addr, uint8_t freq_khz);
+static void 		SYSTEM_set_slew(bool option);
+static void 		SYSTEM_set_bound(bool option);
+
+static void 		SYSTEM_set_pid(SPI_ADDR mot_addr, PID_PARAM param, uint8_t* flt_array);
 
 static void 		SYSTEM_get_enc(SPI_ADDR enc_addr);
 static void 		SYSTEM_get_hal(SPI_ADDR hal_addr);
@@ -96,12 +100,16 @@ struct SYSTEM_CLASS sys =
 	.echo 			= &SYSTEM_echo,
 
 	.set_mode		= &SYSTEM_set_mode,
+	.set_pos		= NULL,
 	.set_gui		= &SYSTEM_set_gui,
 	.set_msg		= &SYSTEM_set_msg,
+
 	.set_pwm		= &SYSTEM_set_pwm,
 	.set_freq 		= &SYSTEM_set_freq,
-	.set_pos		= NULL,
-	.set_enc		= NULL,
+	.set_slew		= &SYSTEM_set_slew,
+	.set_bound		= &SYSTEM_set_bound,
+
+	.set_pid 		= &SYSTEM_set_pid,
 
 	.get_enc 		= &SYSTEM_get_enc,
 	.get_hal 		= &SYSTEM_get_hal,
@@ -275,6 +283,61 @@ static void SYSTEM_set_freq(SPI_ADDR mot_addr, uint8_t freq_khz)
 {
 	mot.set_freq(mot_addr == MOT1 ? mot1 : mot0, freq_khz);
 	cli.msgf("FRQ of MOT%u was set to %d kHz.", mot_addr - 1, freq_khz);
+}
+
+static void SYSTEM_set_slew(bool option)
+{
+	mot0->slew = option;
+	mot1->slew = option;
+	cli.msgf("MOT slew was %s.", option ? "enabled" : "disabled");
+}
+
+static void SYSTEM_set_bound(bool option)
+{
+	//mot0->bound = option;
+	mot1->bound = option;
+	cli.msgf("MOT boundary was %s.", option ? "enabled" : "disabled");
+}
+
+static void SYSTEM_set_pid(SPI_ADDR mot_addr, PID_PARAM param, uint8_t* flt_array)
+{
+	float rx_float      = 0.0f;
+	PID*  target_pid 	= (mot_addr == MOT0) ? NULL : NULL;
+
+	// construct float from float byte array
+	memcpy(&rx_float, flt_array, sizeof(float));
+
+	// !!!
+	// temporary return
+	return;
+
+	// set PID parameter
+	switch (param)
+	{
+		case PID_KP:
+		{
+			target_pid->Kp = rx_float;
+			break;
+		}
+
+		case PID_KI:
+		{
+			target_pid->Ki = rx_float;
+			break;
+		}
+
+		case PID_KD:
+		{
+			target_pid->Kd = rx_float;
+			break;
+		}
+
+		default:
+		{
+		    break;
+		}
+	}
+
 }
 
 static void SYSTEM_get_enc(SPI_ADDR enc_addr)

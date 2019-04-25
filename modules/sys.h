@@ -4,8 +4,8 @@
 *
 * FILENAME...:	sys.h
 * MODULENAME.:	SYSTEM
-* API........:	n/a
-* VERSION....:	1.3.0
+* API........:	https://git.io/fjsVH
+* VERSION....:	1.4.0
 *
 * DESCRIPTION:	An example module. This might have a lengthy description, in
 *				which case, we simply add some tabs.
@@ -16,8 +16,10 @@
 
 /***************************** Include files *******************************/
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 #include <malloc.h>
 #include <assert.h>
 
@@ -28,11 +30,13 @@
 #include "cli.h"
 #include "hal.h"
 #include "mot.h"
+#include "pid.h"
 
 /*****************************    Defines    *******************************/
 
 typedef enum	SYS_MODE SYS_MODE;
 typedef enum	CAL_MODE CAL_MODE;
+typedef enum    PID_PARAM PID_PARAM;
 typedef struct	MOT_DATA MOT_DATA;
 typedef struct	GUI_DATA GUI_DATA;
 
@@ -95,6 +99,15 @@ struct GUI_DATA
 	MOT_DATA	mot1;
 };
 
+enum PID_PARAM
+{
+	PID_KP,		// proportional gain
+	PID_KI,		// integrator gain
+	PID_KD,		// derivative gain
+	PID_N,		// filter constant
+	PID_I,		// gain index
+};
+
 /*************************    Class Functions    ***************************/
 
 extern struct SYSTEM_CLASS
@@ -117,12 +130,18 @@ extern struct SYSTEM_CLASS
 	void		(* const echo)(void);
 
 	void		(* const set_mode)(SYS_MODE mode);
+	void 		(* const set_pos)(uint8_t theta);
 	void		(* const set_gui)(bool option);
 	void		(* const set_msg)(bool option);
+
 	void 		(* const set_pwm)(SPI_ADDR mot_addr, int8_t pwm);
 	void 		(* const set_freq)(SPI_ADDR mot_addr, uint8_t freq_khz);
-	void 		(* const set_pos)(uint8_t theta);
-	void 		(* const set_enc)(uint8_t ticks);
+	void		(* const set_slew)(bool option);
+	void		(* const set_bound)(bool option);
+
+	void 		(* const set_pid)(SPI_ADDR mot_addr, PID_PARAM param, uint8_t* flt_array);
+	// set slew
+	// set bound
 
 	void 		(* const get_enc)(SPI_ADDR enc_addr);
 	void 		(* const get_hal)(SPI_ADDR hal_addr);
