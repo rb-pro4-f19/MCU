@@ -37,7 +37,8 @@ const struct PID_CLASS pid =
 
 	.new			= &PID_new,
 	.del			= &PID_del,
-	.operate        = &PID_operate
+	.operate        = &PID_operate,
+	.operate_v2     = &PID_operate_v2
 
 };
 
@@ -52,13 +53,18 @@ static PID* PID_new(float Kp, float Ki, float Kd, float N)
 	this->Ki = Ki;
 	this->Kd = Kd;
 	this->Tf = 0;
-	this->V[0] = 0;
-	this->V[1] = 0;
-	this->E[0] = 0;
-	this->E[1] = 0;
-	this->U  = 0;
-	this->Y  = 0;
-	this->R  = 0;
+	this->v[0] = 0;
+	this->v[1] = 0;
+	this->v[2] = 0;
+	this->e[0] = 0;
+	this->e[1] = 0;
+	this->y[0] = 0;
+	this->y[1] = 0;
+	this->y[2] = 0;
+	this->r[0] = 0;
+	this->r[1] = 0;
+	this->r[2] = 0;
+	this->u  = 0;
 	this->Ts = 0;
 	this->antiwindup = 0;
 
@@ -81,44 +87,44 @@ static void PID_operate(PID* this, MOTOR* m_this)
 	mot.get_enc(m_this);
 
 	// measure the current position
-	this->Y = m_this->enc;
+	this->y[0] = m_this->enc;
 
 	// prev error is updated
-	this->E[1] = this->E[0];
+	this->e[1] = this->e[0];
 
 	// new error is calculated
-	this->E[0] = (this->R) - (this->Y);
+	this->e[0] = (this->r[0]) - (this->y[0]);
 
 	// prev signal is updated
-	this->V[1] = this->V[0];
+	this->v[1] = this->v[0];
 
 
 	// is antiwindup set?
-	if (!(this->antiwindup))
+	if ( (this->antiwindup) == 1)
 	{
 		// update new signal without antiwindup
-		this->V[0] = (this->E[0])*((this->Kp)+(this->Ki*(this->Ts)*0.5)) + this->E[1]*(((this->Ki)*(this->Ts)*0.5)-(this->Kp))+(this->V[1]);
+		this->v[0] = (this->e[0])*((this->Kp)+(this->Ki*(this->Ts)*0.5)) + this->e[1]*(((this->Ki)*(this->Ts)*0.5)-(this->Kp))+(this->v[1]);
 	}
 	else
 	{
 		// update old signal with antiwindup
-		this->V[0] = (this->E[0])*(this->Kp)+(this->E[1])*(-(this->Kp))+(this->V[1]);
+		this->v[0] = (this->e[0])*(this->Kp)+(this->e[1])*(-(this->Kp))+(this->v[1]);
 	};
 
 	// is pwm saturated? there is two saturation limits 127 and -127
-	if ((this->V[0]) > PWM_MAX)
+	if ((this->v[0]) > PWM_MAX)
 	{
-		this->V[0] = PWM_MAX;
-		this->antiwindup = 1;
+		this->v[0] = PWM_MAX;
+		this->antiwindup = 0;
 	}
-	else if ((this->V[0]) < PWM_MIN )
+	else if ((this->v[0]) < PWM_MIN )
 	{
-		this->V[0] = PWM_MIN;
-		this->antiwindup = 1;
+		this->v[0] = PWM_MIN;
+		this->antiwindup = 0;
 	}
-	else this->antiwindup = 0;
+	else this->antiwindup = 1;
 
-	mot.set_pwm(m_this,(int8_t)(this->V[0]));
+	mot.set_pwm(m_this,(int8_t)(this->v[0]));
 
 }
 
@@ -127,33 +133,57 @@ static void PID_operate_v2(PID* this, MOTOR* m_this)
     // currently is only a PID_operate_v2 regulator
 
 	float Kp1, Kp2, Kp3;
-	float Ki1, Ki2, Ki3;
+	float Ki1 = 0, Ki2 = 0, Ki3 = 0;
 	float Kd3;
 	float Uk1, Uk2;
 
     // calculate new error
     mot.get_enc(m_this);
 
-	Kp1 = this->Kp * ( this->b * this->R[0] - this->Y[0] );
+	// save prev positions
+	this->y[2] = this->y[1];
+	this->y[1] = this->y[0];
+	this->y[0] = m_this->enc;
 
-	Kp2 = -1 * ( this->Tf * this->Kp * 4 ) / ( 2 * this->Tf + this->Ts ) * ( this->b * this->R[1] - this->Y[1] );
+	// prev error is updated
+	this->r[2] = this->r[1];
+	this->r[1] = this->r[0];
+	this->r[0] = this->r[0];
 
-	Kp3 = this->Kp * ( 2 * this->Tf - this->Ts ) / ( 2 * this->Tf + this->Ts ) * ( this->b * this->R[2]-this->Y[2] );
+	Kp1 = this->Kp * ( this->b * this->r[0] - this->y[0] );
+	Kp2 = -1 * ( this->Tf * this->Kp * 4 ) / ( 2 * this->Tf + this->Ts ) * ( this->b * this->r[1] - this->y[1] );
+	Kp3 = this->Kp * ( 2 * this->Tf - this->Ts ) / ( 2 * this->Tf + this->Ts ) * ( this->b * this->r[2]-this->y[2] );
 
-	Ki1 = this->Ki * this->Ts * ( this->R[0] - this->Y[0] );
+	if ( this->antiwindup == 1 )
+	{
+		Ki1 = this->Ki * this->Ts * ( this->r[0] - this->y[0] );
+		Ki2 = this->Ts * this->Ts * this->Ki / ( 2 * this->Tf + this->Ts ) * ( this->r[1] - this->y[1] );
+		Ki3 = ( ( this->Ts * this->Ts * this->Ki ) - ( 2 * this->Tf * this->Ki * this->Ts ) ) / ( 2 * ( 2 * this->Tf + this->Ts ) ) * ( this->r[2] - this->y[2] );
+	}
 
-	Ki2 = this->Ts * this->Ts * this->Ki / ( 2 * this->Tf + this->Ts ) * ( this->R[1] - this->Y[1] );
+	Kd3 = this->Kd * 2 / ( 2 * this->Tf + this->Ts ) * ( this->c * this->r[2] - this->y[2] );
+	Uk1 = 4 * this->Tf / ( 2 * this->Tf + this->Ts ) * this->v[1];
+	Uk2 = -1 * ( 2 * this->Tf - this->Ts ) / ( 2 * this->Tf + this->Ts ) * this->v[2];
 
-	Ki3 = ( ( this->Ts * this->Ts * this->Ki ) - ( 2 * this->Tf * this->Ki * this->Ts ) ) / ( 2 * ( 2 * this->Tf + this->Ts ) ) * ( this->R[2] - this->Y[2] );
+	// prev signal is updated
+	this->v[2] = this->v[1];
+	this->v[1] = this->v[0];
+	this->v[0] = Kp1 + Kp2 + Kp3 + Ki1 + Ki2 + Ki3 + Kd3 + Uk1 + Uk2;
 
-	Kd3 = this->Kd * 2 / ( 2 * this->Tf + this->Ts ) * ( this->c * this->R[2] - this->Y[2] );
+	// is pwm saturated? there is two saturation limits 127 and -127
+	if ( ( this->v[0] ) > PWM_MAX )
+	{
+		this->v[0] = PWM_MAX;
+		this->antiwindup = 0;
+	}
+	else if ((this->v[0]) < PWM_MIN )
+	{
+		this->v[0] = PWM_MIN;
+		this->antiwindup = 0;
+	}
+	else this->antiwindup = 1;
 
-	Uk1 = 4 * this->Tf / ( 2 * this->Tf + this->Ts ) * this->V[1];
-
-	Uk2 = -1 * ( 2 * this->Tf - this->Ts ) / ( 2 * this->Tf + this->Ts ) * this->V[2];
-
-	this->V[0] = Kp1 + Kp2 + Kp3 + Ki1 + Ki2 + Ki3 + Kd3 + Uk1 + Uk2;
-
+	mot.set_pwm(m_this,(int8_t)(this->v[0]));
 
 }
 
