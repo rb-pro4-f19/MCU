@@ -34,6 +34,18 @@ Text.
 ### [Unreleased]
 - Nothing to see here, keep moving.
 
+#### Added
+- Add redundancy check defines.
+- Add boundary defines.
+- Add redundancy check in `_SYSTEM_MODE_calibration()` for `CAL_PAN_SEEK_BOUNDARY`.
+- Initialize motor boundary settings in `.init()`.
+- Included calibration check in `.operate()` for `SYS_OPERATION` state.
+
+#### Changed
+- Changed calibration defines; updated values.
+- Updated `CAL_TILT_FINETUNE` state.
+- Renamed `is_cal` to `cal_done` for improved clarity; same with `is_init`.
+
 ---
 
 <!-- ----------------------------------------------------------------------------------------- -->

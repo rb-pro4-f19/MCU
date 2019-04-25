@@ -31,11 +31,16 @@
 #define GUI_UPDATE_DELAY			5	 	// ms
 
 #define CAL_PAN_SEEK_BOUNDARY_DUR	300		// ms
-#define CAL_PAN_SEEK_BOUNDARY_PWM	-30
-#define CAL_PAN_SEEK_HAL_PWM		24
-#define CAL_TILT_SEEK_HAL_PWM		-30
-#define CAL_TILT_FINETUNE_PWM		10
-#define CAL_TILT_FINETUNE_DUR		2000		// ms
+#define CAL_PAN_SEEK_BOUNDARY_PWM	-40
+#define CAL_PAN_SEEK_HAL_PWM		43
+#define CAL_TILT_SEEK_HAL_PWM		-40
+#define CAL_TILT_FINETUNE_PWM		25
+#define CAL_TILT_FINETUNE_DUR		1300		// ms
+#define CAL_REDUNDANCY_NUM			4
+
+#define MOT0_BOUNDARY_MAX			540
+#define MOT1_BOUNDARY_H				236
+#define MOT1_BOUNDARY_L				-243
 
 /*****************************   Variables   *******************************/
 
@@ -75,8 +80,8 @@ struct SYSTEM_CLASS sys =
 {
 	.mode			= SYS_IDLE,
 
-	.is_init		= false,
-	.is_cal			= false,
+	.init_done		= false,
+	.cal_done		= false,
 	.to_gui			= false,
 
 	.tp_cal			= NULL,
@@ -134,10 +139,18 @@ static void SYSTEM_init(void)
 	// init MOT1 w/ ENC0 to 10 kHz
 	mot1 = mot.new(MOT1, ENC1, DEFAULT_MOT_FREQ);
 
-	// init HALL0
+	// set motor boundaries
+	mot0->bound = false;
+	mot0->bound_max = MOT0_BOUNDARY_MAX;
+
+	mot1->bound = true;
+	mot1->bound_l = MOT1_BOUNDARY_L;
+	mot1->bound_h = MOT1_BOUNDARY_H;
+
+	// init HAL0
 	hal0 = hal.new(HAL0);
 
-	// init HALL1
+	// init HAL1
 	hal1 = hal.new(HAL1);
 
 	// setup TIMEPOINTS
@@ -145,8 +158,9 @@ static void SYSTEM_init(void)
 	sys.tp_gui = tp.new();
 	sys.tp_tst = tp.new();
 
-	// update variables and system mode
-	sys.is_init = true;
+	// set system variables
+	sys.init_done = true;
+	sys.cal_done = false;
 	sys.mode = SYS_IDLE;
 
 	// initialize GUI data
@@ -193,8 +207,12 @@ static void SYSTEM_operate(void)
 		case SYS_OPERATION:
 		{
 
+			// lambda used to measure execution time of operation loop
 			sys.op_time = tp.lmeasure(LAMBDA(void _(void)
 			{
+
+			// check if system not calibrated
+			if (!sys.cal_done) { return; }
 
 			// control motors (feed the watchdog, woof woof)
 			mot.operate(mot0);
@@ -393,7 +411,7 @@ static void _SYSTEM_MODE_calibration(void)
 			if ((mot0->pwm & mot1->pwm) != 0) { break; }
 
 			// reset variables
-			sys.is_cal = false;
+			sys.cal_done = false;
 			mot1_enc_cur = 0;
 			mot1_enc_prev = 0;
 
@@ -436,10 +454,9 @@ static void _SYSTEM_MODE_calibration(void)
 
 			// check if motor is stuck; break if false
 			if (abs(mot1_enc_cur - mot1_enc_prev) != 0) { reduc_check = 0; break; }
-			if ( ++reduc_check < 4 ) { break; }
 
-			// !!!!
-			// implement redundancy check.. counter or shiftreg
+			// redundancy check
+			if ( ++reduc_check < CAL_REDUNDANCY_NUM ) { break; }
 
 			// save the encoder value here, since this is the "best reference"
 			// possible
@@ -502,6 +519,9 @@ static void _SYSTEM_MODE_calibration(void)
 			// check if desired finetune duration has passed
 			if (tp.delta_now(sys.tp_cal, ms) < CAL_TILT_FINETUNE_DUR ) { break; }
 
+			mot0->slew = false;
+			mot1->slew = false;
+
 			// stop motor
 			mot.set_pwm(mot0, 0);
 
@@ -526,7 +546,11 @@ static void _SYSTEM_MODE_calibration(void)
 			mot0->enc = 0;
 			mot1->enc = 0;
 
-			sys.is_cal = true;
+			// enable slew
+			mot0->slew = true;
+			mot1->slew = true;
+
+			sys.cal_done = true;
 			cal_state = CAL_RESET;
 			sys.mode = SYS_IDLE;
 

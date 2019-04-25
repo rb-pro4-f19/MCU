@@ -101,8 +101,8 @@ extern struct SYSTEM_CLASS
 {
 	SYS_MODE	mode;
 
-	bool		is_cal;
-	bool		is_init;
+	bool		cal_done;
+	bool		init_done;
 	bool		to_gui;
 
 	TIMEPOINT*	tp_cal;
