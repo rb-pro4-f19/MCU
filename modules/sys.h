@@ -121,7 +121,8 @@ extern struct SYSTEM_CLASS
 	void		(* const set_msg)(bool option);
 	void 		(* const set_pwm)(SPI_ADDR mot_addr, int8_t pwm);
 	void 		(* const set_freq)(SPI_ADDR mot_addr, uint8_t freq_khz);
-	void 		(* const set_pos)(uint8_t theta);
+	void		(* const set_pos_pan)(float theta_pan);
+	void		(* const set_pos_tilt)(float theta_tilt);
 	void 		(* const set_enc)(uint8_t ticks);
 
 	void 		(* const get_enc)(SPI_ADDR enc_addr);
