@@ -48,10 +48,12 @@ Text.
 #### Added
 - Add `CLI_MSG_MAXLEN` define.
 - Add `allow_msg` control variable to `cli`.
+- **`[1.2.1] - 2019-04-25`** Add `CMD_ID` `enum` for `CLI_ACTION` `id`.
 
 #### Changed
 - Changed `.log()` & `.logf()` to `msg()` & `.msgf()`.
 - Removed size checks; now handled by UART.
+- **`[1.2.1] - 2019-04-25`** Changed `CLI_MAX_TYPES` to 4 and `CLI_MAX_ACTIONS` to 12.
 
 ---
 
