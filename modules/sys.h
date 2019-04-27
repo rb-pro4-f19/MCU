@@ -99,15 +99,6 @@ struct GUI_DATA
 	MOT_DATA	mot1;
 };
 
-enum PID_PARAM
-{
-	PID_KP,		// proportional gain
-	PID_KI,		// integrator gain
-	PID_KD,		// derivative gain
-	PID_N,		// filter constant
-	PID_I,		// gain index
-};
-
 /*************************    Class Functions    ***************************/
 
 extern struct SYSTEM_CLASS
@@ -130,9 +121,7 @@ extern struct SYSTEM_CLASS
 	void		(* const echo)(void);
 
 	void		(* const set_mode)(SYS_MODE mode);
-	void 		(* const set_pos)(uint8_t theta);
-	void		(* const set_pos_pan)(float theta_pan);
-	void		(* const set_pos_tilt)(float theta_tilt);
+	void 		(* const set_pos)(SPI_ADDR mot_addr, uint8_t* flt_array);
 	void		(* const set_gui)(bool option);
 	void		(* const set_msg)(bool option);
 

@@ -35,12 +35,17 @@
 #define CAL_PAN_SEEK_HAL_PWM		43
 #define CAL_TILT_SEEK_HAL_PWM		-40
 #define CAL_TILT_FINETUNE_PWM		25
-#define CAL_TILT_FINETUNE_DUR		1300		// ms
+#define CAL_TILT_FINETUNE_DUR		1300	// ms
 #define CAL_REDUNDANCY_NUM			4
 
-#define MOT0_BOUNDARY_MAX			540
-#define MOT1_BOUNDARY_H				236
-#define MOT1_BOUNDARY_L				-243
+#define MOT0_BOUNDARY_MAX			540		// ticks
+#define MOT1_BOUNDARY_H				236		// ticks
+#define MOT1_BOUNDARY_L				-243	// ticks
+
+#define PID0_KP						2
+#define PID0_KI 					20
+#define PID1_KP						2
+#define PID1_KI 					20
 
 /*****************************   Variables   *******************************/
 
@@ -50,6 +55,8 @@ MOTOR* 		mot0;
 MOTOR* 		mot1;
 HAL*		hal0;
 HAL*		hal1;
+PID* 		pid0;
+PID* 		pid1;
 
 /************************  Function Declarations ***************************/
 
@@ -58,9 +65,7 @@ static void 		SYSTEM_operate(void);
 static void			SYSTEM_echo(void);
 
 static void 		SYSTEM_set_mode(SYS_MODE mode);
-//static void 		SYSTEM_set_pos(uint8_t theta);
-static void 		SYSTEM_set_pos_pan(float theta_pan);
-static void 		SYSTEM_set_pos_tilt(float theta_tilt);
+static void 		SYSTEM_set_pos(SPI_ADDR mot_addr, uint8_t* flt_array);
 static void 		SYSTEM_set_gui(bool option);
 static void 		SYSTEM_set_msg(bool option);
 
@@ -102,9 +107,7 @@ struct SYSTEM_CLASS sys =
 	.echo 			= &SYSTEM_echo,
 
 	.set_mode		= &SYSTEM_set_mode,
-	.set_pos		= NULL,
-	.set_pos_pan	= &SYSTEM_set_pos_pan,
-	.set_pos_tilt	= &SYSTEM_set_pos_tilt,
+	.set_pos		= &SYSTEM_set_pos,
 	.set_gui		= &SYSTEM_set_gui,
 	.set_msg		= &SYSTEM_set_msg,
 
@@ -145,10 +148,10 @@ static void SYSTEM_init(void)
 	// assign SPI to HALL class
 	hal.spi_module = spi_main;
 
-	// init MOT0 w/ ENC0 to 10 kHz
+	// init MOT0 w/ ENC0 to 10 kHz (tilt)
 	mot0 = mot.new(MOT0, ENC0, DEFAULT_MOT_FREQ);
 
-	// init MOT1 w/ ENC0 to 10 kHz
+	// init MOT1 w/ ENC0 to 10 kHz (pan)
 	mot1 = mot.new(MOT1, ENC1, DEFAULT_MOT_FREQ);
 
 	// set motor boundaries
@@ -164,6 +167,21 @@ static void SYSTEM_init(void)
 
 	// init HAL1
 	hal1 = hal.new(HAL1);
+
+	// init PID0 (tilt)
+	pid0 = pid.new(mot0, 0.1f, 0.0f, 0.0f, 0.002f);
+	pid0->Kp = PID0_KP;
+	pid0->Ki = PID0_KI;
+	pid0->clamp = true;
+	pid0->sat_max = 127;
+	pid0->sat_min = -127;
+
+	// init PID1 (pan)
+	pid1 = pid.new(mot1, 0.1f, 0.1f, 0.0f, 0.002f);
+	pid1->Kp = PID1_KP;
+	pid1->Ki = PID1_KI;
+	pid1->sat_max = 127;
+	pid1->sat_min = -127;
 
 	// setup TIMEPOINTS
 	sys.tp_cal = tp.new();
@@ -213,6 +231,19 @@ static void SYSTEM_operate(void)
 
 		case SYS_TUNING:
 		{
+			sys.op_time = tp.lmeasure(LAMBDA(void _(void)
+			{
+
+			// operate controllers
+			pid.operate(pid0);
+			//pid.operate(pid1);
+
+			// operate motors
+			mot.operate(mot0);
+			mot.operate(mot1);
+
+			}), ms);
+
 			break;
 		}
 
@@ -254,29 +285,6 @@ static void SYSTEM_operate(void)
 
 /***************************   System Calls   ******************************/
 
-static void 		SYSTEM_set_pos_pan(float theta_pan)
-{
-	// lets say there is an angle coming in 360 degree for the pan, it goes between
-	// 1080 / 360 -> encoder ticks relationship
-	// theta_pan = 1080 / 360 * theta_pan;
-	// if ( theta_pan >= 0)
-	//{
-	// theta_pan = (theta_pan > MOT1_BOUNDARY_H ? MOT1_BOUNDARY_H : theta_pan )
-		/* code */
-	//}
-	// theta_pan = (theta_pan >= 0) ? 1 : -1;
-	// enc_pos =
-	//  = theta_pan %
-
-}
-
-static void 		SYSTEM_set_pos_tilt(float theta_tilt)
-{
-
-
-
-}
-
 static void	SYSTEM_echo(void)
 {
 	cli.msg("Hello world!");
@@ -286,6 +294,18 @@ static void SYSTEM_set_mode(SYS_MODE mode)
 {
 	sys.mode = mode;
 	cli.msgf("Mode set to %d.", (uint8_t)mode);
+}
+
+static void SYSTEM_set_pos(SPI_ADDR mot_addr, uint8_t* flt_array)
+{
+	PID* target_pid = (mot_addr == MOT1) ? pid1 : pid0;
+	static float theta_ang = 0.0f;
+
+	// construct float from float byte array
+	memcpy(&theta_ang, flt_array, sizeof(float));
+
+	// 1080 / 360 -> encoder ticks relationship
+	target_pid->r[0] = 3 * theta_ang;
 }
 
 static void SYSTEM_set_gui(bool option)
@@ -329,14 +349,10 @@ static void SYSTEM_set_bound(bool option)
 static void SYSTEM_set_pid(SPI_ADDR mot_addr, PID_PARAM param, uint8_t* flt_array)
 {
 	float rx_float      = 0.0f;
-	PID*  target_pid 	= (mot_addr == MOT0) ? NULL : NULL;
+	PID*  target_pid 	= (mot_addr == MOT0) ? pid0 : pid1;
 
 	// construct float from float byte array
 	memcpy(&rx_float, flt_array, sizeof(float));
-
-	// !!!
-	// temporary return
-	return;
 
 	// set PID parameter
 	switch (param)
@@ -455,9 +471,9 @@ static inline void _SYSTEM_fill_gui(void)
 		.hal		= hal0->val,
 		.pid_i		= 1,
 		.pid_n		= ++demoval,
-		.pid_kp		= 9.11f,
-		.pid_ki		= 7.5f,
-		.pid_kd		= 2.0f,
+		.pid_kp		= pid0->Kp,
+		.pid_ki		= pid0->Ki,
+		.pid_kd		= pid0->Kd,
 	};
 
 	// motor1 data
@@ -470,9 +486,9 @@ static inline void _SYSTEM_fill_gui(void)
 		.hal		= hal1->val,
 		.pid_i		= 1,
 		.pid_n		= sys.op_time,
-		.pid_kp		= 13.71234f,
-		.pid_ki		= 6.66f,
-		.pid_kd		= 0.0f,
+		.pid_kp		= pid1->Kp,
+		.pid_ki		= pid1->Ki,
+		.pid_kd		= pid1->Kd,
 	};
 }
 
@@ -508,6 +524,10 @@ static void _SYSTEM_MODE_calibration(void)
 			// temporary disable slew rate
 			mot0->slew = false;
 			mot1->slew = false;
+
+			// disable boundary detection
+			mot0->bound = false;
+			mot1->bound = false;
 
 			// begin calibration
 			cal_state = CAL_PAN_INIT;
@@ -639,6 +659,10 @@ static void _SYSTEM_MODE_calibration(void)
 			// enable slew
 			mot0->slew = true;
 			mot1->slew = true;
+
+			// enable bound
+			mot0->bound = true;
+			mot1->bound = true;
 
 			sys.cal_done = true;
 			cal_state = CAL_RESET;
