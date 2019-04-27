@@ -34,6 +34,19 @@ Text.
 ### [Unreleased]
 - Nothing to see here, keep moving.
 
+
+#### Added
+- Add PID defines; e.g. `KP	= this->Kp`.
+- Add saturation limits to `PID` class.
+- Add clamp variable to `PID` class.
+
+#### Changed
+- Update `.operate()`; semantic clean up.
+- Update `.new()`; fixed `malloc()` bug.
+
+#### Fixed
+-
+
 ---
 
 <!-- ----------------------------------------------------------------------------------------- -->
