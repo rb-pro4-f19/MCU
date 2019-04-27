@@ -234,7 +234,7 @@ static int16_t MOTOR_get_enc(MOTOR* this)
 		this->enc += enc_dat;
 
 		// encoder boundary rollover
-		if (!this->bound) { this->enc %= this->bound_max; }
+		//if (!this->bound) { this->enc %= this->bound_max; }
 
 		// return the read delta encoder value
 		return enc_dat;

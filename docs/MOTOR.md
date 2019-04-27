@@ -33,10 +33,8 @@ Text.
 
 ### [Unreleased]
 
-<!-- #### Known Issues -->
-
-<!-- #### Todo
-- Item. -->
+#### Changed
+- Removed encoder boundary modulus restriction in `.get_enc()`.
 
 ---
 
