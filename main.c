@@ -30,7 +30,7 @@ int main(void)
 
 		{ UART_SET, {
 			{ SET_MODE,		CLI_LAMBDA({ sys.set_mode(args[0]); 					}) },
-			{ SET_POS,      CLI_LAMBDA({ return;                                    }) },
+			{ SET_POS,      CLI_LAMBDA({ sys.set_pos(args[0], &args[1]);			}) },
 			{ SET_GUI,		CLI_LAMBDA({ sys.set_gui(args[0]);              		}) },
 			{ SET_MSG,		CLI_LAMBDA({ sys.set_msg(args[0]);              		}) },
 			{ SET_PWM,		CLI_LAMBDA({ sys.set_pwm(args[0], args[1]); 			}) },
