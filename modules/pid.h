@@ -41,7 +41,7 @@ extern const struct PID_CLASS
 	PID* 			(* const new)(MOTOR* mot, float Kp, float Ki, float Kd, float Ts);
 	void 			(* const del)(PID* this);
 	void            (* const operate)(PID* this);
-	void            (* const operate_v2)(PID* this, MOTOR* m_this);
+	void            (* const operate_v2)(PID* this);
 
 } pid;
 
