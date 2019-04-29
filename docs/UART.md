@@ -59,6 +59,12 @@ Text.
 #### Known Issues
 - Protocol only supports `31 bytes` of payload; should be `255 bytes`.
 
+#### Added
+- Add `.send_obj()` method.
+
+#### Changed
+- Update `enum``UART_FRAME_TYPE`.
+
 ---
 
 <!-- ----------------------------------------------------------------------------------------- -->

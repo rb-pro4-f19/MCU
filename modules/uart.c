@@ -42,6 +42,7 @@ static UART_FRAME*	UART_newframe(void);
 static void 		UART_delframe(UART_FRAME* this);
 
 static void 		UART_send(UART* this, UART_FRAME_TYPE type, const uint8_t* payload, size_t payload_size);
+static void 		UART_send_obj(UART* this, UART_FRAME_TYPE type, const void* obj, size_t obj_size);
 static void 		UART_stream(UART* this, const void* obj, size_t obj_size);
 static bool			UART_read(UART* this, UART_FRAME* frame, bool send_ack);
 
@@ -62,6 +63,7 @@ const struct UART_CLASS uart =
 	.delframe		= &UART_delframe,
 
 	.send			= &UART_send,
+	.send_obj		= &UART_send_obj,
 	.stream 		= &UART_stream,
 	.read			= &UART_read
 };
@@ -182,6 +184,16 @@ static void UART_send(UART* this, UART_FRAME_TYPE type, const uint8_t* payload, 
 	for (int i = 0; i < (payload_size + 2); i++)
 	{
 		_UART_transmit(tx_buffer[i]);
+	}
+}
+
+static void UART_send_obj(UART* this, UART_FRAME_TYPE type, const void* obj, size_t obj_size)
+{
+	// iterate bytes of object and send them individually as frames
+	const uint8_t* byte;
+	for (byte = obj; obj_size--; ++byte)
+	{
+		uart.send(this, type, byte, 1);
 	}
 }
 

@@ -47,6 +47,7 @@ extern const struct UART_CLASS
 	void 		(*delframe)(UART_FRAME* frame);
 
 	void 		(*send)(UART* this, UART_FRAME_TYPE type, const uint8_t* payload, size_t payload_size);
+	void 		(*send_obj)(UART* this, UART_FRAME_TYPE type, const void* obj, size_t obj_size);
 	void 		(*stream)(UART* this, const void* obj, size_t obj_size);
 	bool		(*read)(UART* this, UART_FRAME* frame, bool send_ack);
 } uart;
@@ -62,16 +63,18 @@ enum UART_BAUDRATE
 	BAUD_921600
 };
 
+// maximum of 8 elements (2^3)
+// should match across MCU & CLI
 enum UART_FRAME_TYPE
 {
-	UART_CONNECT	= 0x00,
-	UART_RAW		= 0x01,
-	UART_GET		= 0x02,
-	UART_SET		= 0x03,
-	UART_ACK		= 0x04,
-	UART_RESPONSE	= 0x05,
-	UART_STREAM		= 0x06,
-	UART_MSG		= 0x07
+	UART_DO,
+	UART_GET,
+	UART_SET,
+	UART_ACK,
+	UART_RESPONSE,
+	UART_MSG,
+	UART_STREAM,
+	UART_SAMPLEDATA
 };
 
 struct UART_FRAME
