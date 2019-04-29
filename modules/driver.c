@@ -86,3 +86,29 @@ void sys_tick_init(uint16_t tick_period_us)
 
 #endif
 }
+
+void sys_time_period_init()
+{
+	// Enable the GPIO port that is used for the on-board LED.
+    SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOF;
+
+    // Do a dummy read to insert a few cycles after enabling the peripheral.
+    dummy = SYSCTL_RCGC2_R;
+
+	// Set the direction as output (PF0)
+	GPIO_PORTF_DIR_R = 0x01;
+
+	// Enable the GPIO pins for digital function (PF0).
+	GPIO_PORTF_DEN_R = 0x01;
+
+	// GPIO pins output
+	GPIO_PORTF_DATA_R &= ~(1 << 0);
+
+
+}
+
+void toggle_period()
+{
+	// I AM ALIVE
+	GPIO_PORTF_DATA_R ^= (1 << 0);
+}

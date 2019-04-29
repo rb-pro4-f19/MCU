@@ -23,6 +23,7 @@
 #define KI		this->Ki * this->Ki_en
 #define KD		this->Kd
 #define TS		this->Ts
+#define TF		this->Tf
 #define SAT_MAX	this->sat_max
 #define SAT_MIN	this->sat_min
 /*****************************   Constants   *******************************/
@@ -32,7 +33,7 @@
 /************************  Function Declarations ***************************/
 
 static void 		PID_operate(PID* this);
-static void 		PID_operate_v2(PID* this, MOTOR* m_this);
+static void 		PID_operate_v2(PID* this);
 static PID*         PID_new(MOTOR* mot, float Kp, float Ki, float Kd, float Ts);
 static void 		PID_del(PID* this);
 
@@ -79,9 +80,9 @@ static PID* PID_new(MOTOR* mot, float Kp, float Ki, float Kd, float Ts)
 	this->y[1]		= 0.0f;
 	this->y[2]		= 0.0f;
 
-	this->b 		= 0.0f;
+	this->b 		= 1.0f;
 	this->c 		= 0.0f;
-	this->Tf 		= 0.0f;
+	this->Tf 		= 20.0f;
 
 	this->clamp 	= false;
 	this->antiwindup= false;
@@ -141,14 +142,14 @@ static void PID_operate(PID* this)
 	mot.set_pwm(this->mot, (int8_t)((-1)*(this->u)));
 }
 
-static void PID_operate_v2(PID* this, MOTOR* m_this)
+static void PID_operate_v2(PID* this)
 {
 	// currently is only a PID_operate_v2 regulator
 
-	float Kp1, Kp2, Kp3;
-	float Ki1 = 0, Ki2 = 0, Ki3 = 0;
-	float Kd3;
-	float Uk1, Uk2;
+	static float Kp1, Kp2, Kp3;
+	static float Ki1 = 0, Ki2 = 0, Ki3 = 0;
+	static float Kd3;
+	static float Uk1, Uk2;
 
 	// calculate new error
 	mot.get_enc(m_this);
@@ -156,47 +157,57 @@ static void PID_operate_v2(PID* this, MOTOR* m_this)
 	// save prev positions
 	this->y[2] = this->y[1];
 	this->y[1] = this->y[0];
-	this->y[0] = m_this->enc;
+	this->y[0] = this->mot->enc;
 
 	// prev error is updated
 	this->r[2] = this->r[1];
 	this->r[1] = this->r[0];
 	this->r[0] = this->r[0];
 
-	Kp1 = this->Kp * ( this->b * this->r[0] - this->y[0] );
-	Kp2 = -1 * ( this->Tf * this->Kp * 4 ) / ( 2 * this->Tf + this->Ts ) * ( this->b * this->r[1] - this->y[1] );
-	Kp3 = this->Kp * ( 2 * this->Tf - this->Ts ) / ( 2 * this->Tf + this->Ts ) * ( this->b * this->r[2]-this->y[2] );
+	// Kp terms are calculated
+	Kp1 = KP * ( this->b * this->r[0] - this->y[0] );
+	Kp2 = -1 * ( TF * KP * 4 ) / ( 2 * TF + TS ) * ( this->b * this->r[1] - this->y[1] );
+	Kp3 = KP * ( 2 * TF - TS ) / ( 2 * TF + TS ) * ( this->b * this->r[2] - this->y[2] );
 
 	if ( this->antiwindup == 1 )
 	{
-		Ki1 = this->Ki * this->Ts * ( this->r[0] - this->y[0] );
-		Ki2 = this->Ts * this->Ts * this->Ki / ( 2 * this->Tf + this->Ts ) * ( this->r[1] - this->y[1] );
-		Ki3 = ( ( this->Ts * this->Ts * this->Ki ) - ( 2 * this->Tf * this->Ki * this->Ts ) ) / ( 2 * ( 2 * this->Tf + this->Ts ) ) * ( this->r[2] - this->y[2] );
+		Ki1 = KI * TS * ( this->r[0] - this->y[0] );
+		Ki2 = TS * TS * KI / ( 2 * TF + TS ) * ( this->r[1] - this->y[1] );
+		Ki3 = ( ( TS * TS * KI ) - ( 2 * TF * KI * TS ) ) / ( 2 * ( 2 * TF + TS ) ) * ( this->r[2] - this->y[2] );
+	}
+	else
+	{
+		Ki1 = 0; Ki2 = 0; Ki3 = 0;
 	}
 
-	Kd3 = this->Kd * 2 / ( 2 * this->Tf + this->Ts ) * ( this->c * this->r[2] - this->y[2] );
-	Uk1 = 4 * this->Tf / ( 2 * this->Tf + this->Ts ) * this->v[1];
-	Uk2 = -1 * ( 2 * this->Tf - this->Ts ) / ( 2 * this->Tf + this->Ts ) * this->v[2];
+	Kd3 = KD * 2 / ( 2 * TF + TS ) * ( this->c * this->r[2] - this->y[2] );
+	Uk1 = 4 * TF / ( 2 * TF + TS ) * this->v[1];
+	Uk2 = -1 * ( 2 * TF - TS ) / ( 2 * TF + TS ) * this->v[2];
 
 	// prev signal is updated
 	this->v[2] = this->v[1];
 	this->v[1] = this->v[0];
 	this->v[0] = Kp1 + Kp2 + Kp3 + Ki1 + Ki2 + Ki3 + Kd3 + Uk1 + Uk2;
 
-	// is pwm saturated? there is two saturation limits 127 and -127
-	if ( ( this->v[0] ) > PWM_MAX )
+	// saturation limits & anti-windup
+	if ((this->v[0] > SAT_MAX) || (this->v[0] < SAT_MIN))
 	{
-		this->v[0] = PWM_MAX;
-		this->antiwindup = 0;
-	}
-	else if ((this->v[0]) < PWM_MIN )
-	{
-		this->v[0] = PWM_MIN;
-		this->antiwindup = 0;
-	}
-	else this->antiwindup = 1;
+		// bound output
+		this->u = (this->v[0] > SAT_MAX) ? SAT_MAX : SAT_MIN;
 
-	mot.set_pwm(m_this,(int8_t)(this->v[0]));
+		// anti-windup
+		this->Ki_en = (this->clamp) ? false : true;
+	}
+	else
+	{
+		this->u = this->v[0];
+		this->Ki_en = true;
+	}
+
+
+	// output control signal
+	// the PWM must be inverted
+	mot.set_pwm(this->mot, (int8_t)((-1)*(this->u)));
 
 }
 
