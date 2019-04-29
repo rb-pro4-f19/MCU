@@ -47,6 +47,8 @@
 #define PID1_KP						2
 #define PID1_KI 					20
 
+#define MAX_SAMPLES                 2048
+
 /*****************************   Variables   *******************************/
 
 SPI*		spi_main;
@@ -62,19 +64,22 @@ PID* 		pid1;
 
 static void 		SYSTEM_init(void);
 static void 		SYSTEM_operate(void);
+
 static void			SYSTEM_echo(void);
+static void 		SYSTEM_sample(SYSTEM_VAR var, SAMPLE_TYPE type, const uint8_t* dur_ms_arr, const uint8_t* addr_arr);
 
 static void 		SYSTEM_set_mode(SYS_MODE mode);
-static void 		SYSTEM_set_pos(SPI_ADDR mot_addr, uint8_t* flt_array);
+static void 		SYSTEM_set_pos(SPI_ADDR mot_addr, const uint8_t* flt_array);
 static void 		SYSTEM_set_gui(bool option);
+static void 		SYSTEM_set_sampler(bool option);
 static void 		SYSTEM_set_msg(bool option);
 
 static void 		SYSTEM_set_pwm(SPI_ADDR mot_addr, int8_t pwm);
 static void 		SYSTEM_set_freq(SPI_ADDR mot_addr, uint8_t freq_khz);
-static void 		SYSTEM_set_slew(bool option);
+static void 		SYSTEM_set_slew(TARGET_SLEW target_slew, bool option);
 static void 		SYSTEM_set_bound(bool option);
 
-static void 		SYSTEM_set_pid(SPI_ADDR mot_addr, PID_PARAM param, uint8_t* flt_array);
+static void 		SYSTEM_set_pid(SPI_ADDR mot_addr, PID_PARAM param, const uint8_t* flt_array);
 
 static void 		SYSTEM_get_enc(SPI_ADDR enc_addr);
 static void 		SYSTEM_get_hal(SPI_ADDR hal_addr);
@@ -93,18 +98,24 @@ struct SYSTEM_CLASS sys =
 
 	.init_done		= false,
 	.cal_done		= false,
-	.to_gui			= false,
+
+	.use_gui		= false,
+	.use_slew		= true,
+	.use_sampler	= true,
 
 	.tp_cal			= NULL,
 	.tp_gui			= NULL,
 	.tp_tst			= NULL,
 
+	.cal_state 		= CAL_RESET,
 	.gui_data		= {},
 	.op_time	 	= 0,
 
 	.init			= &SYSTEM_init,
 	.operate		= &SYSTEM_operate,
+
 	.echo 			= &SYSTEM_echo,
+	.sample			= &SYSTEM_sample,
 
 	.set_mode		= &SYSTEM_set_mode,
 	.set_pos		= &SYSTEM_set_pos,
@@ -145,8 +156,11 @@ static void SYSTEM_init(void)
 	// assign SPI to MOTOR class
 	mot.spi_module = spi_main;
 
-	// assign SPI to HALL class
+	// assign SPI to HAL class
 	hal.spi_module = spi_main;
+
+	// init SAMPLER w/ UART module and max_samples size
+	sampler.init(uart_main, MAX_SAMPLES);
 
 	// init MOT0 w/ ENC0 to 10 kHz (tilt)
 	mot0 = mot.new(MOT0, ENC0, DEFAULT_MOT_FREQ);
@@ -206,7 +220,8 @@ static void SYSTEM_operate(void)
 {
 
 	// send data to GUI if enabled
-	if (sys.to_gui)	{ _SYSTEM_to_gui_bg(); }
+	if (sys.use_gui)			{ _SYSTEM_to_gui_bg(); }
+	if (sys.use_sampler)		{ sampler.operate(); }
 
 	// finite state machine
 	switch (sys.mode)
@@ -290,13 +305,95 @@ static void	SYSTEM_echo(void)
 	cli.msg("Hello world!");
 }
 
+static void SYSTEM_sample(SYSTEM_VAR var, SAMPLE_TYPE type, const uint8_t* dur_ms_arr, const uint8_t* addr_arr)
+{
+	static void* 	target_var;
+	static uint32_t target_addr = 0;
+	static uint16_t target_dur_ms = 0;
+
+	// select which variable to sample
+	switch (var)
+	{
+		case SV_ADDR:
+		{
+			// parse target address from byte array
+			memcpy(&target_addr, addr_arr, sizeof(uint32_t));
+
+			// set target variable to parsed address
+			target_var = (void*)target_addr;
+
+			break;
+		}
+
+		case SV_PID0_U:
+		{
+			target_var = &(pid0->u);
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
+
+	// parse target duration from byte array
+	memcpy(&target_dur_ms, dur_ms_arr, sizeof(uint16_t));
+
+	// initialize sampler
+	sampler.sample(target_var, type, target_dur_ms);
+}
+
 static void SYSTEM_set_mode(SYS_MODE mode)
 {
+	// set mode
 	sys.mode = mode;
+
+	// default configuration
+	switch(mode)
+	{
+		case SYS_IDLE:
+		{
+			break;
+		}
+
+		case SYS_TUNING:
+		{
+			// disable slew
+			sys.set_slew(TARGET_SLEW_MOT, false);
+
+			break;
+		}
+
+		case SYS_CALIBRATION:
+		{
+			// reset calibration state
+			sys.cal_state = CAL_RESET;
+
+			// disable boundaries
+			sys.set_bound(false);
+
+			break;
+		}
+
+		case SYS_OPERATION:
+		{
+			// enable slew
+			sys.set_slew(TARGET_SLEW_MOT, true);
+			sys.set_slew(TARGET_SLEW_REF, true);
+
+			// enable boundaries
+			sys.set_bound(true);
+
+			break;
+		}
+	}
+
+	// message info
 	cli.msgf("Mode set to %d.", (uint8_t)mode);
 }
 
-static void SYSTEM_set_pos(SPI_ADDR mot_addr, uint8_t* flt_array)
+static void SYSTEM_set_pos(SPI_ADDR mot_addr, const uint8_t* flt_array)
 {
 	PID* target_pid = (mot_addr == MOT1) ? pid1 : pid0;
 	static float theta_ang = 0.0f;
@@ -310,8 +407,14 @@ static void SYSTEM_set_pos(SPI_ADDR mot_addr, uint8_t* flt_array)
 
 static void SYSTEM_set_gui(bool option)
 {
-	sys.to_gui = option;
+	sys.use_gui = option;
 	cli.msgf("GUI was %s.", option ? "enabled" : "disabled");
+}
+
+static void SYSTEM_set_sampler(bool option)
+{
+	sys.use_sampler = option;
+	cli.msgf("SAMPLER was %s.", option ? "enabled" : "disabled");
 }
 
 static void SYSTEM_set_msg(bool option)
@@ -332,11 +435,28 @@ static void SYSTEM_set_freq(SPI_ADDR mot_addr, uint8_t freq_khz)
 	cli.msgf("FRQ of MOT%u was set to %d kHz.", mot_addr - 1, freq_khz);
 }
 
-static void SYSTEM_set_slew(bool option)
+static void SYSTEM_set_slew(TARGET_SLEW target_slew, bool option)
 {
-	mot0->slew = option;
-	mot1->slew = option;
-	cli.msgf("MOT slew was %s.", option ? "enabled" : "disabled");
+	switch(target_slew)
+	{
+		case TARGET_SLEW_REF:
+		{
+			sys.use_slew = option;
+			cli.msgf("REF slew was %s.", option ? "enabled" : "disabled");
+
+			break;
+		}
+
+		case TARGET_SLEW_MOT:
+		{
+			mot0->slew = option;
+			mot1->slew = option;
+			cli.msgf("MOT slew was %s.", option ? "enabled" : "disabled");
+
+			break;
+		}
+	}
+
 }
 
 static void SYSTEM_set_bound(bool option)
@@ -346,7 +466,7 @@ static void SYSTEM_set_bound(bool option)
 	cli.msgf("MOT boundary was %s.", option ? "enabled" : "disabled");
 }
 
-static void SYSTEM_set_pid(SPI_ADDR mot_addr, PID_PARAM param, uint8_t* flt_array)
+static void SYSTEM_set_pid(SPI_ADDR mot_addr, PID_PARAM param, const uint8_t* flt_array)
 {
 	float rx_float      = 0.0f;
 	PID*  target_pid 	= (mot_addr == MOT0) ? pid0 : pid1;
@@ -372,6 +492,12 @@ static void SYSTEM_set_pid(SPI_ADDR mot_addr, PID_PARAM param, uint8_t* flt_arra
 		case PID_KD:
 		{
 			target_pid->Kd = rx_float;
+			break;
+		}
+
+		case PID_CLAMP:
+		{
+			target_pid->clamp = (bool)rx_float;
 			break;
 		}
 
@@ -404,7 +530,7 @@ static void _SYSTEM_to_gui(void)
 	// takes too long to transfer data.
 
 	// flow control
-	if (tp.delta_now(sys.tp_gui, ms) < GUI_UPDATE_DELAY*2 ) { return; }
+	if (tp.delta_now(sys.tp_gui, ms) < GUI_UPDATE_DELAY * 2 ) { return; }
 
 	// populate GUI data
 	_SYSTEM_fill_gui();
@@ -455,11 +581,13 @@ static void _SYSTEM_to_gui_bg(void)
 static inline void _SYSTEM_fill_gui(void)
 {
 
-	static uint8_t demoval;
-
 	// operation data
 	sys.gui_data.mode		= sys.mode;
-	//sys.gui_data.op_time	= sys.op_time;
+	sys.gui_data.op_time	= sys.op_time;
+	sys.gui_data.bound 		= mot1->bound;;
+	sys.gui_data.slew_r		= sys.use_slew;
+	sys.gui_data.slew_y 	= (mot0->slew) & (mot1->slew);
+	sys.gui_data.cal_done	= sys.cal_done;
 
 	// motor0 data
 	sys.gui_data.mot0 = (MOT_DATA)
@@ -467,13 +595,14 @@ static inline void _SYSTEM_fill_gui(void)
 		.pwm		= mot0->pwm,
 		.freq		= mot0->freq_khz,
 		.enc		= mot0->enc,
-		.spd		= 5.2f,
+		//.spd		= 5.2f,
 		.hal		= hal0->val,
-		.pid_i		= 1,
-		.pid_n		= ++demoval,
+		//.pid_i		= 1,
+		//.pid_n		= pid0->Tf,
 		.pid_kp		= pid0->Kp,
 		.pid_ki		= pid0->Ki,
-		.pid_kd		= pid0->Kd,
+		//.pid_kd		= pid0->Kd,
+		.pid_clamp	= pid0->clamp,
 	};
 
 	// motor1 data
@@ -482,27 +611,25 @@ static inline void _SYSTEM_fill_gui(void)
 		.pwm		= mot1->pwm,
 		.freq		= mot1->freq_khz,
 		.enc		= mot1->enc,
-		.spd		= 0.0f,
+		//.spd		= 0.0f,
 		.hal		= hal1->val,
-		.pid_i		= 1,
-		.pid_n		= sys.op_time,
+		//.pid_i		= 1,
+		//.pid_n		= pid1->Tf,
 		.pid_kp		= pid1->Kp,
 		.pid_ki		= pid1->Ki,
-		.pid_kd		= pid1->Kd,
+		//.pid_kd		= pid1->Kd,
+		.pid_clamp	= pid1->clamp,
 	};
 }
 
 static void _SYSTEM_MODE_calibration(void)
 {
 	// static variables
-	// why are they not declared? -> because static implies zero-initialization, unless
-	// otherwise specified
 	static int16_t	mot1_enc_cur, mot1_enc_prev;
-	static CAL_MODE	cal_state = CAL_RESET;
 	static uint8_t	reduc_check = 0;
 
 	// calibration state machine
-	switch (cal_state)
+	switch (sys.cal_state)
 	{
 
 		case CAL_RESET:
@@ -530,7 +657,7 @@ static void _SYSTEM_MODE_calibration(void)
 			mot1->bound = false;
 
 			// begin calibration
-			cal_state = CAL_PAN_INIT;
+			sys.cal_state = CAL_PAN_INIT;
 
 			break;
 		}
@@ -542,7 +669,7 @@ static void _SYSTEM_MODE_calibration(void)
 
 			mot.set_pwm(mot1, CAL_PAN_SEEK_BOUNDARY_PWM);
 			mot1_enc_cur = mot.get_enc(mot1);
-			cal_state = CAL_PAN_SEEK_BOUNDARY;
+			sys.cal_state = CAL_PAN_SEEK_BOUNDARY;
 			reduc_check = 0;
 
 			break;
@@ -568,13 +695,9 @@ static void _SYSTEM_MODE_calibration(void)
 			// redundancy check
 			if ( ++reduc_check < CAL_REDUNDANCY_NUM ) { break; }
 
-			// save the encoder value here, since this is the "best reference"
-			// possible
-			// mot1_enc_cur   = 0;
-
 			// reverse motor direction and begin seeking for hall sensor
 			mot.set_pwm(mot1, CAL_PAN_SEEK_HAL_PWM);
-			cal_state = CAL_PAN_SEEK_HAL;
+			sys.cal_state = CAL_PAN_SEEK_HAL;
 
 			break;
 		}
@@ -589,7 +712,7 @@ static void _SYSTEM_MODE_calibration(void)
 
 			// stop PAN motor and switch to calibrating TILT motor
 			mot.set_pwm(mot1, 0);
-			cal_state = CAL_TILT_INIT;
+			sys.cal_state = CAL_TILT_INIT;
 
 			break;
 		}
@@ -597,7 +720,7 @@ static void _SYSTEM_MODE_calibration(void)
 		case CAL_TILT_INIT:
 		{
 			mot.set_pwm(mot0, CAL_TILT_SEEK_HAL_PWM);
-			cal_state = CAL_TILT_SEEK_HAL;
+			sys.cal_state = CAL_TILT_SEEK_HAL;
 
 			break;
 		}
@@ -616,16 +739,13 @@ static void _SYSTEM_MODE_calibration(void)
 			// reset TIMEPOINT and begin
 			mot.set_pwm(mot0, CAL_TILT_FINETUNE_PWM);
 			tp.set(sys.tp_cal, tp.now());
-			cal_state = CAL_TILT_FINETUNE;
+			sys.cal_state = CAL_TILT_FINETUNE;
 
 			break;
 		}
 
 		case CAL_TILT_FINETUNE:
 		{
-			// !!!!
-			// should only be called if delta ticks > x
-
 			// check if desired finetune duration has passed
 			if (tp.delta_now(sys.tp_cal, ms) < CAL_TILT_FINETUNE_DUR ) { break; }
 
@@ -636,7 +756,7 @@ static void _SYSTEM_MODE_calibration(void)
 			mot.set_pwm(mot0, 0);
 
 			// finish up
-			cal_state = CAL_FINISH;
+			sys.cal_state = CAL_FINISH;
 
 			break;
 		}
@@ -665,7 +785,7 @@ static void _SYSTEM_MODE_calibration(void)
 			mot1->bound = true;
 
 			sys.cal_done = true;
-			cal_state = CAL_RESET;
+			sys.cal_state = CAL_RESET;
 			sys.mode = SYS_IDLE;
 
 			return;

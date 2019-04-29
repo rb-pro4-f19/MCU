@@ -31,12 +31,15 @@
 #include "hal.h"
 #include "mot.h"
 #include "pid.h"
+#include "sampler.h"
 
 /*****************************    Defines    *******************************/
 
 typedef enum	SYS_MODE SYS_MODE;
 typedef enum	CAL_MODE CAL_MODE;
 typedef enum    PID_PARAM PID_PARAM;
+typedef enum    SYSTEM_VAR SYSTEM_VAR;
+typedef enum    TARGET_SLEW TARGET_SLEW;
 typedef struct	MOT_DATA MOT_DATA;
 typedef struct	GUI_DATA GUI_DATA;
 
@@ -80,23 +83,41 @@ struct MOT_DATA
 {
 	int8_t		pwm;
 	uint8_t		freq;
-	int16_t		enc;
-	float		spd;
+	uint16_t	enc;
+	//float		spd;
 	uint8_t		hal;
 
-	uint8_t		pid_i;
-	uint8_t		pid_n;
+	//uint8_t		pid_i;
+	//uint8_t		pid_n;
 	float		pid_kp;
 	float		pid_ki;
-	float		pid_kd;
+	//float		pid_kd;
+	uint8_t		pid_clamp;
 };
 
 struct GUI_DATA
 {
 	uint8_t		mode;
+	uint16_t 	op_time;
+	uint8_t 	cal_done;
+	uint8_t		bound;
+	uint8_t		slew_r;
+	uint8_t		slew_y;
 
 	MOT_DATA	mot0;
 	MOT_DATA	mot1;
+};
+
+enum SYSTEM_VAR
+{
+	SV_ADDR,
+	SV_PID0_U,
+};
+
+enum TARGET_SLEW
+{
+	TARGET_SLEW_REF,
+	TARGET_SLEW_MOT
 };
 
 /*************************    Class Functions    ***************************/
@@ -107,30 +128,37 @@ extern struct SYSTEM_CLASS
 
 	bool		cal_done;
 	bool		init_done;
-	bool		to_gui;
+
+	bool		use_gui;
+	bool		use_slew;
+	bool 		use_sampler;
 
 	TIMEPOINT*	tp_cal;
 	TIMEPOINT*	tp_gui;
 	TIMEPOINT*	tp_tst;
 
+	CAL_MODE	cal_state;
 	GUI_DATA 	gui_data;
 	uint16_t 	op_time;
 
 	void		(* const init)(void);
 	void		(* const operate)(void);
+
 	void		(* const echo)(void);
+	void 		(* const sample)(SYSTEM_VAR var, SAMPLE_TYPE type, const uint8_t* dur_ms_arr, const uint8_t* addr_arr);
+	void 		(* const resend)(void);
 
 	void		(* const set_mode)(SYS_MODE mode);
-	void 		(* const set_pos)(SPI_ADDR mot_addr, uint8_t* flt_array);
+	void 		(* const set_pos)(SPI_ADDR mot_addr, const uint8_t* flt_array);
 	void		(* const set_gui)(bool option);
 	void		(* const set_msg)(bool option);
 
 	void 		(* const set_pwm)(SPI_ADDR mot_addr, int8_t pwm);
 	void 		(* const set_freq)(SPI_ADDR mot_addr, uint8_t freq_khz);
-	void		(* const set_slew)(bool option);
+	void		(* const set_slew)(TARGET_SLEW target_slew, bool option);
 	void		(* const set_bound)(bool option);
 
-	void 		(* const set_pid)(SPI_ADDR mot_addr, PID_PARAM param, uint8_t* flt_array);
+	void 		(* const set_pid)(SPI_ADDR mot_addr, PID_PARAM param, const uint8_t* flt_array);
 
 	void 		(* const get_enc)(SPI_ADDR enc_addr);
 	void 		(* const get_hal)(SPI_ADDR hal_addr);

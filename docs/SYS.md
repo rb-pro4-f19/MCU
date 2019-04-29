@@ -34,15 +34,30 @@ Text.
 ### [Unreleased]
 - Nothing to see here, keep moving.
 
+---
+
+<!-- ----------------------------------------------------------------------------------------- -->
+
+### [1.5.0] - 2019-04-29
+
 #### Added
 - Add PID defines, e.g. `PID0_KP`.
 - Initialize PID instance + variables; `pid0` and `pid1`.
-- Add to PID operation to `SYS_TUNING`.
+- Add PID operation to `SYS_TUNING`.
+- Include `sampler.h` with `MAX_SAMPLES` define.
+- Add `.set_sampler()` method.
+- Add `.sample()` method + `SYSTEM_VAR` `enum`.
+- Add `use_gui`, `use_slew` and `use_sampelr` control variables to `sys` struct.
+- Add `PID_CLAMP` case to `.set_pid()`.
 
 #### Changed
 - Remove define of `enum` `PID_PARAM`.
 - Changed `.set_pos()` method.
 - Disabled bounds in calibration mode.
+- Extend `.set_slew()` method to specify which slew to set (reference or motor slew) w/ `TARGET_SLEW` `enum`.
+- Made calibration state `.cal_state` part of `sys` struct.
+- Extend `.set_mode()` to reset default settings according to selected state.
+- Update `GUI_DATA` & `MOT_DATA` structs + `_SYSTEM_fill_gui()` method.
 
 ---
 
