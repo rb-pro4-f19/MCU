@@ -47,6 +47,10 @@ typedef enum	CMD_ID			CMD_ID;
 // should match across MCU & CLI
 enum CMD_ID
 {
+	// UART_DO
+	DO_ECHO,
+	DO_SAMPLE,
+
 	// UART_GET
 	GET_ECHO,
 	GET_ENC,

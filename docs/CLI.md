@@ -36,6 +36,12 @@ Text.
 #### Known Issues
 - All `.log()` methods fail when used with payload > 32 chars; UART protocol wrongly defined.
 
+#### Added
+- Add `UART_DO` commands to `CMD_ID` `enum`.
+
+#### Changed
+- Changed `GET_ECHO` to `DO_ECHO`.
+
 <!-- #### Todo
 - Item. -->
 
