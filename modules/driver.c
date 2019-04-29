@@ -89,6 +89,8 @@ void sys_tick_init(uint16_t tick_period_us)
 
 void sys_time_period_init()
 {
+	int dummy;
+
 	// Enable the GPIO port that is used for the on-board LED.
     SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOF;
 

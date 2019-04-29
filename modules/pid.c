@@ -152,7 +152,7 @@ static void PID_operate_v2(PID* this)
 	static float Uk1, Uk2;
 
 	// calculate new error
-	mot.get_enc(m_this);
+	mot.get_enc(this->mot);
 
 	// save prev positions
 	this->y[2] = this->y[1];
