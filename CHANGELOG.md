@@ -8,6 +8,7 @@
 - Add `.set_slew()` method + `CMD_TABLE` entry.
 - Add `.set_bound()` method + `CMD_TABLE` entry.
 - Add `.set_pid()` method + `CMD_TABLE` entry.
+- Add `UART_DO` type to `CMD_TABLE`.
 
 #### Changed
 - Set optimization level to `-O0`.
