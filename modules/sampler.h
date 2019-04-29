@@ -4,7 +4,7 @@
 *
 * FILENAME...:	sampler.h
 * MODULENAME.:	SAMPLER
-* API........:	n/a
+* API........:	https://git.io/fjG6L
 * VERSION....:	1.0.0
 *
 * DESCRIPTION:	An example module. This might have a lengthy description, in
@@ -26,6 +26,7 @@
 
 typedef struct  SAMPLE_DATA 		SAMPLE_DATA;
 typedef struct  SAMPLE_DATAPOINT	SAMPLE_DATAPOINT;
+typedef enum 	SAMPLE_TYPE			SAMPLE_TYPE;
 
 /***********************     External Variables     ************************/
 
@@ -48,23 +49,29 @@ struct SAMPLE_DATA
 	SAMPLE_DATAPOINT*	samples;
 };
 
+enum SAMPLE_TYPE
+{
+	ST_INTEGER,
+	ST_FLOATING,
+};
+
 /*************************    Class Functions    ***************************/
 
 extern struct SAMPLER_CLASS
 {
 	UART* 		uart_module;
 	bool 		is_sampling;
-	uint32_t 	index;
 	size_t	 	max_size;
 
 	SAMPLE_DATA data;
 	void* 		target_var;
 	uint32_t 	target_dur_ms;
+	SAMPLE_TYPE	target_type;
 	TIMEPOINT* 	tp_sampler;
 
 	void 		(* const init)(UART* uart_module, uint32_t max_samples);
 	void 		(* const reset)(void);
-	void 		(* const sample)(void* variable, uint32_t dur_ms);
+	void 		(* const sample)(void* variable, SAMPLE_TYPE type, uint32_t dur_ms);
 	void 		(* const export)(void);
 	void 		(* const operate)(void);
 
