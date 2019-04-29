@@ -50,11 +50,12 @@ extern const struct PID_CLASS
 // should match across MCU & CLI
 enum PID_PARAM
 {
-	PID_KP,		// proportional gain
-	PID_KI,		// integrator gain
-	PID_KD,		// derivative gain
-	PID_N,		// filter constant
-	PID_I,		// gain index
+	PID_KP,			// proportional gain
+	PID_KI,			// integrator gain
+	PID_KD,			// derivative gain
+	PID_N,			// filter constant
+	PID_I,			// gain index
+	PID_CLAMP,		// anti-windup clamp
 };
 
 struct PID

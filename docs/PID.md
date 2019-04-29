@@ -39,6 +39,7 @@ Text.
 - Add PID defines; e.g. `KP	= this->Kp`.
 - Add saturation limits to `PID` class.
 - Add clamp variable to `PID` class.
+- Add `PID_CLAMP` to `enum` `PID_PARAM`.
 
 #### Changed
 - Update `.operate()`; semantic clean up.
