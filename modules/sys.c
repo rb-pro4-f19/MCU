@@ -47,6 +47,8 @@
 #define PID1_KP						2
 #define PID1_KI 					20
 
+#define SLEW_DX 					3
+
 #define MAX_SAMPLES                 2048
 
 /*****************************   Variables   *******************************/
@@ -83,6 +85,8 @@ static void 		SYSTEM_set_pid(SPI_ADDR mot_addr, PID_PARAM param, const uint8_t* 
 
 static void 		SYSTEM_get_enc(SPI_ADDR enc_addr);
 static void 		SYSTEM_get_hal(SPI_ADDR hal_addr);
+
+static inline void 	SYSTEM_slew_rate(int16_t * R_set, int16_t * R_cur);
 
 static void 		_SYSTEM_to_gui(void);
 static void         _SYSTEM_to_gui_bg(void);
@@ -131,6 +135,8 @@ struct SYSTEM_CLASS sys =
 
 	.get_enc 		= &SYSTEM_get_enc,
 	.get_hal 		= &SYSTEM_get_hal,
+
+	.slew_rate 		= &SYSTEM_slew_rate
 };
 
 /*****************************   Functions   *******************************/
@@ -792,6 +798,33 @@ static void _SYSTEM_MODE_calibration(void)
 		}
 
 	};
+}
+
+static inline void 	SYSTEM_slew_rate(int16_t * R_set, int16_t * R_cur)
+{
+
+	if ( (*R_set) >= (*R_cur)  )
+	{
+		(*R_cur) += SLEW_DX;
+
+		if ( (*R_cur) >= (*R_set) )
+		{
+			(*R_cur) = (*R_set);
+		}
+
+	}
+	else if ( (*R_set) <= (*R_cur)  )
+	{
+
+		(*R_cur) -= SLEW_DX;
+
+		if ( (*R_cur) <= (*R_set) )
+		{
+			(*R_cur) = (*R_set);
+		}
+
+	};
+
 }
 
 /****************************** End Of Module ******************************/
