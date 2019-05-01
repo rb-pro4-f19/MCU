@@ -162,6 +162,8 @@ extern struct SYSTEM_CLASS
 
 	void 		(* const get_enc)(SPI_ADDR enc_addr);
 	void 		(* const get_hal)(SPI_ADDR hal_addr);
+
+	void 		(* const slew_rate)(int16_t * R_set, int16_t * R_cur);
 } sys;
 
 /****************************** End Of Module ******************************/
