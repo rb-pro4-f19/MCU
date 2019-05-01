@@ -20,7 +20,8 @@
 #include <stdarg.h>
 #include <malloc.h>
 #include <assert.h>
-#include "mot.h"
+
+#include "mot_op.h"
 
 /*****************************    Defines    *******************************/
 

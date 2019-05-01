@@ -2,10 +2,10 @@
 * University of Southern Denmark
 * RB-PRO4 F19
 *
-* FILENAME...:	mot.h
-* MODULENAME.:	MOTOR
-* API........:	https://git.io/fjLSM
-* VERSION....:	1.2.1
+* FILENAME...:	spi.h
+* MODULENAME.:	SPI
+* DOCS.......:	https://git.io/fjJa2
+* VERSION....:	1.2.2
 *
 * DESCRIPTION:	An example module. This might have a lengthy description, in
 *				which case, we simply add some tabs.
@@ -20,11 +20,15 @@
 #include <stdbool.h>
 #include <malloc.h>
 
-#include "spi.h"
+#include "../tm4c123gh6pm.h"
+# include "../modules/tp.h"
 
 /*****************************    Defines    *******************************/
 
-typedef struct  MOTOR MOTOR;
+typedef struct  SPI SPI;
+typedef struct	SPI_FRAME SPI_FRAME;
+typedef enum    SPI_ADDR SPI_ADDR;
+typedef enum    SPI_FRMPART SPI_FRMPART;
 
 /***********************     External Variables     ************************/
 
@@ -32,48 +36,58 @@ typedef struct  MOTOR MOTOR;
 
 /*************************    Class Functions    ***************************/
 
-extern struct MOTOR_CLASS
+extern const struct SPI_CLASS
 {
-	SPI* 		spi_module;
+	SPI*		(*new)(uint8_t clkdiv);
+	void		(*del)(SPI* this);
 
-	MOTOR*		(* const new)(SPI_ADDR mot_addr, SPI_ADDR enc_addr, uint8_t freq_khz);
-	void		(* const del)(MOTOR* this);
-
-	void 		(* const operate)(MOTOR* this);
-	void 		(* const feed)(MOTOR* this);
-
-	bool 		(* const set_pwm)(MOTOR* this, int8_t pwm);
-	bool 		(* const set_freq)(MOTOR* this, uint8_t freq_khz);
-	int16_t		(* const get_enc)(MOTOR* this);
-} mot;
+	bool 		(*send)(SPI* this, SPI_ADDR addr, uint8_t data);
+	bool		(*request)(SPI* this, SPI_ADDR addr, uint16_t* buffer);
+	void		(*flush)(SPI* this);
+} spi;
 
 /*****************************    Constructs   *****************************/
 
-struct MOTOR
+enum SPI_ADDR
+{
+	CTRL 	= 0x00,
+	MOT0 	= 0x01,
+	MOT1 	= 0x02,
+	ENC0 	= 0x03,
+	ENC1 	= 0x04,
+	HAL0 	= 0x05,
+	HAL1 	= 0x06,
+	CUR0 	= 0x07,
+	CUR1 	= 0x08,
+	FREQ	= 0x09,
+
+	RES0	= 0x0A,
+	RES1	= 0x0B,
+	RES2	= 0x0C,
+	RES3	= 0x0D,
+
+	RETX 	= 0x0F
+};
+
+enum SPI_FRMPART
+{
+	ADDR,
+	DATA,
+	CHKSUM
+};
+
+struct SPI_FRAME
+{
+	uint8_t addr 	: 4;
+	uint8_t data 	: 8;
+	uint8_t chksum 	: 4;
+};
+
+struct SPI
 {
 	// public
-	SPI_ADDR 	mot_addr;
-	SPI_ADDR 	enc_addr;
-
-	TIMEPOINT*	tp_watchdog;
-	TIMEPOINT*	tp_slewrate;
-	TIMEPOINT*	tp_speed;
-
-	uint8_t		freq_khz;
-	int8_t		pwm;
-	int8_t		pwm_target;
-	uint8_t		pwm_data;
-	int16_t 	enc;
-	float 		speed;
-
-	bool		slew;
-	uint16_t	slew_dx;
-	uint8_t		slew_dy;
-
-	bool 		bound;
-	int16_t 	bound_l;
-	int16_t		bound_h;
-	uint16_t	bound_max;
+	uint8_t		clkdiv;
+	TIMEPOINT* 	tp_timeout;
 };
 
 /****************************** End Of Module ******************************/

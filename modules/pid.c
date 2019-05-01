@@ -159,26 +159,14 @@ static void PID_operate_v2(PID* this)
 	this->y[1] = this->y[0];
 	this->y[0] = this->mot->enc;
 
-	// prev error is updated
-	this->r[2] = this->r[1];
-	this->r[1] = this->r[0];
-	this->r[0] = this->r[0];
-
 	// Kp terms are calculated
 	Kp1 = KP * ( this->b * this->r[0] - this->y[0] );
-	Kp2 = -1 * ( TF * KP * 4 ) / ( 2 * TF + TS ) * ( this->b * this->r[1] - this->y[1] );
+	Kp2 = 1 * ( TF * KP * 4 ) / ( 2 * TF + TS ) * ( this->b * this->r[1] - this->y[1] );
 	Kp3 = KP * ( 2 * TF - TS ) / ( 2 * TF + TS ) * ( this->b * this->r[2] - this->y[2] );
 
-	if ( this->antiwindup == 1 )
-	{
-		Ki1 = KI * TS * ( this->r[0] - this->y[0] );
-		Ki2 = TS * TS * KI / ( 2 * TF + TS ) * ( this->r[1] - this->y[1] );
-		Ki3 = ( ( TS * TS * KI ) - ( 2 * TF * KI * TS ) ) / ( 2 * ( 2 * TF + TS ) ) * ( this->r[2] - this->y[2] );
-	}
-	else
-	{
-		Ki1 = 0; Ki2 = 0; Ki3 = 0;
-	}
+	Ki1 = KI * TS * ( this->r[0] - this->y[0] );
+	Ki2 = TS * TS * KI / ( 2 * TF + TS ) * ( this->r[1] - this->y[1] );
+	Ki3 = ( ( TS * TS * KI ) - ( 2 * TF * KI * TS ) ) / ( 2 * ( 2 * TF + TS ) ) * ( this->r[2] - this->y[2] );
 
 	Kd3 = KD * 2 / ( 2 * TF + TS ) * ( this->c * this->r[2] - this->y[2] );
 	Uk1 = 4 * TF / ( 2 * TF + TS ) * this->v[1];
@@ -204,10 +192,13 @@ static void PID_operate_v2(PID* this)
 		this->Ki_en = true;
 	}
 
-
 	// output control signal
 	// the PWM must be inverted
 	mot.set_pwm(this->mot, (int8_t)((-1)*(this->u)));
+
+	// prev error is updated
+	this->r[2] = this->r[1];
+	this->r[1] = this->r[0];
 
 }
 

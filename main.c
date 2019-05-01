@@ -54,11 +54,15 @@ int main(void)
 
 	while(true)
 	{
+		pin_rise();
+
 		// check CLI for commands
 		cli.check();
 
 		// operate system
 		sys.operate();
+
+		pin_fall();
 	}
 
 	/** Garbage Collection *************************************************/

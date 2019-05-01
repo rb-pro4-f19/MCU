@@ -25,11 +25,11 @@
 
 #include "driver.h"
 #include "tp.h"
-#include "spi_old.h"
+#include "spi_op.h"
 #include "uart.h"
 #include "cli.h"
 #include "hal.h"
-#include "mot.h"
+#include "mot_op.h"
 #include "pid.h"
 #include "sampler.h"
 

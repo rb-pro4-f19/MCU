@@ -115,7 +115,7 @@ static inline void TIMEPOINT_systick(void)
 ****************************************************************************/
 {
 	// increment system timepoint by duration of a SYSTICK
-	assert(tp_sys != NULL);
+	//assert(tp_sys != NULL);
 	tp.inc(tp_sys, systick_dur_us, us);
 }
 
@@ -230,11 +230,11 @@ static uint64_t TIMEPOINT_get(TIMEPOINT* this, TP_UNIT unit)
 {
 	// sum everything into microseconds
 	uint64_t sum_us =
-		this->time_array[0] +						// us
-		this->time_array[1] * pow(10,  3) +			// ms
-		this->time_array[2] * pow(10,  6) +			// s
-		this->time_array[3] * pow(10,  6) * 60 +	// m
-		this->time_array[4] * pow(10, 12) * 3600;	// h
+		this->time_array[0] +					// us
+		this->time_array[1] * 1000 +			// ms
+		this->time_array[2] * 1000000 +			// s
+		this->time_array[3] * 60000000 +		// m
+		this->time_array[4] * 3600000000000000;	// h
 
 	// return value according to unit
 	return tp.convert_us(sum_us, unit);
@@ -318,7 +318,7 @@ static uint64_t TIMEPOINT_delta_now(TIMEPOINT* tp1, TP_UNIT unit)
 ****************************************************************************/
 {
 	// create temporary TIMEPOINT and set it to current time
-	TIMEPOINT tp_temp;
+	static TIMEPOINT tp_temp;
 	tp.set(&tp_temp, tp.now());
 
 	return tp.delta(&tp_temp, tp1, unit);

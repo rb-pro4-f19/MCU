@@ -26,26 +26,33 @@
 
 /*****************************   Constants   *******************************/
 
-#define SYSTICK_DUR_US				100		// us
+#define SYSTICK_DUR_US				500		// us
 #define DEFAULT_MOT_FREQ			80		// kHz
 #define GUI_UPDATE_DELAY			5	 	// ms
 
 #define CAL_PAN_SEEK_BOUNDARY_DUR	300		// ms
 #define CAL_PAN_SEEK_BOUNDARY_PWM	-40
-#define CAL_PAN_SEEK_HAL_PWM		43
+#define CAL_PAN_SEEK_HAL_PWM		47
 #define CAL_TILT_SEEK_HAL_PWM		-40
 #define CAL_TILT_FINETUNE_PWM		25
-#define CAL_TILT_FINETUNE_DUR		1300	// ms
+#define CAL_TILT_FINETUNE_DUR		100	// ms
 #define CAL_REDUNDANCY_NUM			4
 
 #define MOT0_BOUNDARY_MAX			540		// ticks
 #define MOT1_BOUNDARY_H				236		// ticks
 #define MOT1_BOUNDARY_L				-243	// ticks
 
+#define PID_TS						0.00003f
+#define PID_TF						2000
+#define PID_B						1
+#define PID_C						0.2
+
 #define PID0_KP						2
 #define PID0_KI 					20
+#define PID0_KD						5
 #define PID1_KP						2
 #define PID1_KI 					20
+#define PID1_KD 					5
 
 #define MAX_SAMPLES                 2048
 
@@ -144,6 +151,9 @@ static void SYSTEM_init(void)
 	sys_tick_init(SYSTICK_DUR_US);
 	tp.init_systick(SYSTICK_DUR_US, us);
 
+	// init GPIO benchmark pin
+	sys_time_period_init();
+
 	// init UART @ 921600 baud
 	uart_main = uart.new(BAUD_921600);
 
@@ -183,17 +193,20 @@ static void SYSTEM_init(void)
 	hal1 = hal.new(HAL1);
 
 	// init PID0 (tilt)
-	pid0 = pid.new(mot0, 0.1f, 0.0f, 0.0f, 0.002f);
-	pid0->Kp = PID0_KP;
-	pid0->Ki = PID0_KI;
+	pid0 = pid.new(mot0, PID0_KP, PID0_KI, PID0_KD, PID_TS);
 	pid0->clamp = true;
+	pid0->Tf = PID_TF;
+	pid0->b = PID_B;
+	pid0->c = PID_C;
 	pid0->sat_max = 127;
 	pid0->sat_min = -127;
 
 	// init PID1 (pan)
-	pid1 = pid.new(mot1, 0.1f, 0.1f, 0.0f, 0.002f);
-	pid1->Kp = PID1_KP;
-	pid1->Ki = PID1_KI;
+	pid1 = pid.new(mot1, PID1_KP, PID1_KI, PID1_KD, PID_TS);
+	pid1->clamp = true;
+	pid1->Tf = PID_TF;
+	pid1->b = PID_B;
+	pid1->c = PID_C;
 	pid1->sat_max = 127;
 	pid1->sat_min = -127;
 
@@ -218,6 +231,7 @@ static void SYSTEM_init(void)
 
 static void SYSTEM_operate(void)
 {
+	static float demoval;
 
 	// send data to GUI if enabled
 	if (sys.use_gui)			{ _SYSTEM_to_gui_bg(); }
@@ -229,6 +243,8 @@ static void SYSTEM_operate(void)
 
 		case SYS_IDLE:
 		{
+			demoval++;
+
 			break;
 		}
 
@@ -246,18 +262,10 @@ static void SYSTEM_operate(void)
 
 		case SYS_TUNING:
 		{
-			sys.op_time = tp.lmeasure(LAMBDA(void _(void)
-			{
 
 			// operate controllers
-			pid.operate(pid0);
+			pid.operate_v2(pid0);
 			//pid.operate(pid1);
-
-			// operate motors
-			mot.operate(mot0);
-			mot.operate(mot1);
-
-			}), ms);
 
 			break;
 		}
@@ -265,12 +273,8 @@ static void SYSTEM_operate(void)
 		case SYS_OPERATION:
 		{
 
-			// lambda used to measure execution time of operation loop
-			sys.op_time = tp.lmeasure(LAMBDA(void _(void)
-			{
-
 			// check if system not calibrated
-			if (!sys.cal_done) { return; }
+			//if (!sys.cal_done) { return; }
 
 			// control motors (feed the watchdog, woof woof)
 			mot.operate(mot0);
@@ -283,8 +287,6 @@ static void SYSTEM_operate(void)
 			// read hall sensors
 			hal.read(hal0);
 			hal.read(hal1);
-
-			}), ms);
 
 			break;
 		}
@@ -361,6 +363,9 @@ static void SYSTEM_set_mode(SYS_MODE mode)
 		{
 			// disable slew
 			sys.set_slew(TARGET_SLEW_MOT, false);
+
+			// disable boundaries
+			sys.set_bound(false);
 
 			break;
 		}
@@ -781,7 +786,7 @@ static void _SYSTEM_MODE_calibration(void)
 			mot1->slew = true;
 
 			// enable bound
-			mot0->bound = true;
+			mot0->bound = false;
 			mot1->bound = true;
 
 			sys.cal_done = true;

@@ -30,7 +30,7 @@
 
 static void 		SAMPLER_init(UART* uart_module, uint32_t max_samples);
 static void 		SAMPLER_reset(void);
-static void SAMPLER_sample(void* variable, SAMPLE_TYPE type, uint32_t dur_ms);
+static void 		SAMPLER_sample(void* variable, SAMPLE_TYPE type, uint32_t dur_ms);
 static void 		SAMPLER_export(void);
 static inline void	SAMPLER_operate(void);
 
