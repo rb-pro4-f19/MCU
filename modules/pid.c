@@ -147,9 +147,10 @@ static void PID_operate_v2(PID* this)
 	// currently is only a PID_operate_v2 regulator
 
 	static float Kp1, Kp2, Kp3;
-	static float Ki1 = 0, Ki2 = 0, Ki3 = 0;
-	static float Kd3;
-	static float Uk1, Uk2;
+	static float Ki1, Ki2, Ki3;
+	static float Kd1, Kd2, Kd3;
+	static float vk1, vk2;
+	static float precalculation;
 
 	// calculate new error
 	mot.get_enc(this->mot);
@@ -159,23 +160,29 @@ static void PID_operate_v2(PID* this)
 	this->y[1] = this->y[0];
 	this->y[0] = this->mot->enc;
 
+
 	// Kp terms are calculated
-	Kp1 = KP * ( this->b * this->r[0] - this->y[0] );
-	Kp2 = 1 * ( TF * KP * 4 ) / ( 2 * TF + TS ) * ( this->b * this->r[1] - this->y[1] );
-	Kp3 = KP * ( 2 * TF - TS ) / ( 2 * TF + TS ) * ( this->b * this->r[2] - this->y[2] );
+	vk1 = 8 * this->Tf * this->v[1];
+	vk2 = 2 * ( this->Ts - 2 * this->Tf ) * this->v[2];
 
-	Ki1 = KI * TS * ( this->r[0] - this->y[0] );
-	Ki2 = TS * TS * KI / ( 2 * TF + TS ) * ( this->r[1] - this->y[1] );
-	Ki3 = ( ( TS * TS * KI ) - ( 2 * TF * KI * TS ) ) / ( 2 * ( 2 * TF + TS ) ) * ( this->r[2] - this->y[2] );
+	Kp1 = 2 * this->Kp * ( ( 2 * this->Tf ) + this->Ts ) * ( this->b * this->r[0] - this->y[0] );
+	Ki1 = KI * this->Ts * 2 * ( this->Tf + this->Ts ) * ( this->r[0] - this->y[0] );
+	Kd1 = 4 * this->Kd * ( this->c * this->r[0] - this->y[0] );
 
-	Kd3 = KD * 2 / ( 2 * TF + TS ) * ( this->c * this->r[2] - this->y[2] );
-	Uk1 = 4 * TF / ( 2 * TF + TS ) * this->v[1];
-	Uk2 = -1 * ( 2 * TF - TS ) / ( 2 * TF + TS ) * this->v[2];
+	Kp2 = -8 * this->Kp * this->Tf * ( this->b * this->r[1] - this->y[1] );
+	Ki2 = 2 * KI * this-> Ts * this-> Ts * ( this->r[1] - this->y[1] );
+	Kd2 = -8 * this->Kd * ( this->c * this->r[1] - this->y[1] );
+
+	Kp3 = 2 * this->Kp * ( 2 * this->Tf - this->Ts ) * ( this->b * this->r[2] - this->y[2] );
+    Ki3 = KI * this->Ts * 2 * ( this->Ts - this->Tf ) * ( this->r[2] - this->y[2] );
+	Kd3 = 4 * this->Kd * ( this->c * this->r[2] - this->y[2] );
+
+	precalculation = Kp1+Kp2+Kp3+Ki1+Ki2+Ki3+Kd1+Kd2+Kd3+vk1+vk2;
+	this->v[0] = precalculation / (4 * this->Tf - 2 * this->Ts);
 
 	// prev signal is updated
 	this->v[2] = this->v[1];
 	this->v[1] = this->v[0];
-	this->v[0] = Kp1 + Kp2 + Kp3 + Ki1 + Ki2 + Ki3 + Kd3 + Uk1 + Uk2;
 
 	// saturation limits & anti-windup
 	if ((this->v[0] > SAT_MAX) || (this->v[0] < SAT_MIN))
@@ -196,7 +203,7 @@ static void PID_operate_v2(PID* this)
 	// the PWM must be inverted
 	mot.set_pwm(this->mot, (int8_t)((-1)*(this->u)));
 
-	// prev error is updated
+	// prev reference is updated
 	this->r[2] = this->r[1];
 	this->r[1] = this->r[0];
 
