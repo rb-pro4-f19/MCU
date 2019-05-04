@@ -112,6 +112,7 @@ enum SYSTEM_VAR
 {
 	SV_ADDR,
 	SV_PID0_U,
+	SV_PID0_Y,
 };
 
 enum TARGET_SLEW
@@ -145,7 +146,7 @@ extern struct SYSTEM_CLASS
 	void		(* const operate)(void);
 
 	void		(* const echo)(void);
-	void 		(* const sample)(SYSTEM_VAR var, SAMPLE_TYPE type, const uint8_t* dur_ms_arr, const uint8_t* addr_arr);
+	void 		(* const sample)(SYSTEM_VAR var, SAMPLE_TYPE type, const uint8_t* target_num_samples_arr, const uint8_t* addr_arr);
 	void 		(* const resend)(void);
 
 	void		(* const set_mode)(SYS_MODE mode);
@@ -163,7 +164,7 @@ extern struct SYSTEM_CLASS
 	void 		(* const get_enc)(SPI_ADDR enc_addr);
 	void 		(* const get_hal)(SPI_ADDR hal_addr);
 
-	void 		(* const slew_rate)(int16_t * R_set, int16_t * R_cur);
+	void 		(* const slew_rate)(int16_t* R_set, int16_t* R_cur);
 } sys;
 
 /****************************** End Of Module ******************************/

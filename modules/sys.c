@@ -43,16 +43,16 @@
 #define MOT1_BOUNDARY_L				-243	// ticks
 
 #define PID_TS						0.00003f
-#define PID_TF						2000
+#define PID_TF						1
 #define PID_B						1
-#define PID_C						0.2
+#define PID_C						0
 
 #define PID0_KP						2
-#define PID0_KI 					20
-#define PID0_KD						5
+#define PID0_KI 					1
+#define PID0_KD						0.4
 #define PID1_KP						2
-#define PID1_KI 					20
-#define PID1_KD 					5
+#define PID1_KI 					1
+#define PID1_KD 					0.4
 
 #define SLEW_DX 					3
 
@@ -75,7 +75,8 @@ static void 		SYSTEM_init(void);
 static void 		SYSTEM_operate(void);
 
 static void			SYSTEM_echo(void);
-static void 		SYSTEM_sample(SYSTEM_VAR var, SAMPLE_TYPE type, const uint8_t* dur_ms_arr, const uint8_t* addr_arr);
+static void 		SYSTEM_sample(SYSTEM_VAR var, SAMPLE_TYPE type, const uint8_t* target_num_samples_arr, const uint8_t* addr_arr);
+static void 		SYSTEM_resend(void);
 
 static void 		SYSTEM_set_mode(SYS_MODE mode);
 static void 		SYSTEM_set_pos(SPI_ADDR mot_addr, const uint8_t* flt_array);
@@ -127,6 +128,7 @@ struct SYSTEM_CLASS sys =
 
 	.echo 			= &SYSTEM_echo,
 	.sample			= &SYSTEM_sample,
+	.resend			= &SYSTEM_resend,
 
 	.set_mode		= &SYSTEM_set_mode,
 	.set_pos		= &SYSTEM_set_pos,
@@ -161,7 +163,7 @@ static void SYSTEM_init(void)
 	sys_time_period_init();
 
 	// init UART @ 921600 baud
-	uart_main = uart.new(BAUD_921600);
+	uart_main = uart.new(BAUD_115200);
 
 	// init SPI @ 1 MHz (16 000 000 / >16<)
 	spi_main = spi.new(16);
@@ -224,6 +226,7 @@ static void SYSTEM_init(void)
 	// set system variables
 	sys.init_done = true;
 	sys.cal_done = false;
+	sys.use_sampler = true;
 	sys.mode = SYS_IDLE;
 
 	// initialize GUI data
@@ -313,11 +316,11 @@ static void	SYSTEM_echo(void)
 	cli.msg("Hello world!");
 }
 
-static void SYSTEM_sample(SYSTEM_VAR var, SAMPLE_TYPE type, const uint8_t* dur_ms_arr, const uint8_t* addr_arr)
+static void SYSTEM_sample(SYSTEM_VAR var, SAMPLE_TYPE type, const uint8_t* target_num_samples_arr, const uint8_t* addr_arr)
 {
 	static void* 	target_var;
 	static uint32_t target_addr = 0;
-	static uint16_t target_dur_ms = 0;
+	static uint16_t target_num_samples = 0;
 
 	// select which variable to sample
 	switch (var)
@@ -339,6 +342,12 @@ static void SYSTEM_sample(SYSTEM_VAR var, SAMPLE_TYPE type, const uint8_t* dur_m
 			break;
 		}
 
+		case SV_PID0_Y:
+		{
+			target_var = &(pid0->y);
+			break;
+		}
+
 		default:
 		{
 			break;
@@ -346,10 +355,15 @@ static void SYSTEM_sample(SYSTEM_VAR var, SAMPLE_TYPE type, const uint8_t* dur_m
 	}
 
 	// parse target duration from byte array
-	memcpy(&target_dur_ms, dur_ms_arr, sizeof(uint16_t));
+	memcpy(&target_num_samples, target_num_samples_arr, sizeof(uint16_t));
 
 	// initialize sampler
-	sampler.sample(target_var, type, target_dur_ms);
+	sampler.sample(target_var, type, target_num_samples);
+}
+
+static void SYSTEM_resend()
+{
+	sampler.export();
 }
 
 static void SYSTEM_set_mode(SYS_MODE mode)

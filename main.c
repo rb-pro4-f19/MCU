@@ -26,6 +26,7 @@ int main(void)
 		{ UART_DO, {
 			{ DO_ECHO, 		CLI_LAMBDA({ sys.echo(); 										}) },
 			{ DO_SAMPLE,	CLI_LAMBDA({ sys.sample(args[0], args[1], &args[2], &args[4]); 	}) },
+			{ DO_RESEND,	CLI_LAMBDA({ sys.resend();									 	}) },
 		}},
 
 		{ UART_GET, {

@@ -30,7 +30,7 @@
 
 static void 		SAMPLER_init(UART* uart_module, uint32_t max_samples);
 static void 		SAMPLER_reset(void);
-static void 		SAMPLER_sample(void* variable, SAMPLE_TYPE type, uint32_t dur_ms);
+static void 		SAMPLER_sample(void* variable, SAMPLE_TYPE type, uint32_t num_samples);
 static void 		SAMPLER_export(void);
 static inline void	SAMPLER_operate(void);
 
@@ -44,7 +44,7 @@ struct SAMPLER_CLASS sampler =
 
 	.tp_sampler 		= NULL,
 	.target_var 		= NULL,
-	.target_dur_ms 		= 0,
+	.target_samples		= 0,
 	.target_type        = ST_FLOATING,
 
 	.init				= &SAMPLER_init,
@@ -92,18 +92,15 @@ static void SAMPLER_reset(void)
 	sampler.data.duration_ms	= 0;
 }
 
-static void SAMPLER_sample(void* variable, SAMPLE_TYPE type, uint32_t dur_ms)
+static void SAMPLER_sample(void* variable, SAMPLE_TYPE type, uint32_t target_samples)
 {
 	// set target variables
 	sampler.target_var = variable;
-	sampler.target_dur_ms = dur_ms;
+	sampler.target_samples = target_samples;
 	sampler.target_type = type;
 
 	// reset sampler
 	sampler.reset();
-
-	// reset timepoint
-	tp.set(sampler.tp_sampler, tp.now());
 
 	// commence sampling
 	sampler.is_sampling = true;
@@ -142,8 +139,13 @@ static void SAMPLER_export(void)
 		uart.send_obj(sampler.uart_module, UART_SAMPLEDATA, &(sampler.data.samples[i]), sizeof(SAMPLE_DATAPOINT));
 	}
 
-	// send UART_SAMPLEDATA frame of size 2 w/ USDC_EOT to end transmission
-	uart.send(sampler.uart_module, UART_SAMPLEDATA, (uint8_t[2]){USDC_EOT}, 2);
+	// send EOT 3 times to be sure
+	for (int i = 0; i < 3; i++)
+	{
+		// send UART_SAMPLEDATA frame of size 2 w/ USDC_EOT to end transmission
+		uart.send(sampler.uart_module, UART_SAMPLEDATA, (uint8_t[2]){USDC_EOT}, 2);
+	}
+
 }
 
 static inline void SAMPLER_operate(void)
@@ -155,21 +157,19 @@ static inline void SAMPLER_operate(void)
 	// check if sampling is required
 	if(!sampler.is_sampling) { return; }
 
-	// check if more space available
-	if (sampler.data.num_samples >= sampler.max_size) { sampler.export(); return; }
-
-	// check if sampling time is overrun
-	if (tp.delta_now(sampler.tp_sampler, ms) > sampler.target_dur_ms) { sampler.export(); return; }
+	// check if more space available or sampled enough
+	if (sampler.data.num_samples >= sampler.max_size) 		{ sampler.export(); return; }
+	if (sampler.data.num_samples >= sampler.target_samples) { sampler.export(); return; }
 
 	// read and parse value of target_var (void*) correctly
 	if 		(sampler.target_type == ST_FLOATING) { value = *((float*)(sampler.target_var)); }
 	else if (sampler.target_type == ST_INTEGER)	 { value = *((int*)(sampler.target_var));   }
 
-	// add sample from taret variable w/ system time
+	// add sample from taret variable w/ current sample index
 	index = sampler.data.num_samples++;
 
-	sampler.data.samples[index].time	= index;
-	sampler.data.samples[index].value	= (float)value;
+	sampler.data.samples[index].time	= (uint16_t)index;
+	sampler.data.samples[index].value	= (int16_t)value;
 }
 
 /****************************** End Of Module ******************************/

@@ -1,0 +1,12 @@
+# 1. may 2019:
+
++ optimized many methods; replaced old versions with optimized ones: e.g. mot.h -> mot_op.h
+
+# 3. may 2019:
+
++ add .resend() method + command to CMD_TABLE
++ add DO_RESEND to enum in cli.h
++ removed TIMEPOINT from sampler; now purely sample based.
++ changed target_dur_ms to target_samples; updated all methods.
++ changed sampler SAMPLE_DATAPOINT precision to int16_t
++ changed UART to use BAUD_100k

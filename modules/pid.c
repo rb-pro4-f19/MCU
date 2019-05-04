@@ -20,7 +20,7 @@
 #define PWM_MIN -127
 
 #define KP		this->Kp
-#define KI		this->Ki * this->Ki_en
+#define KI		(this->Ki * this->Ki_en)
 #define KD		this->Kd
 #define TS		this->Ts
 #define TF		this->Tf
@@ -166,19 +166,19 @@ static void PID_operate_v2(PID* this)
 	vk2 = 2 * ( this->Ts - 2 * this->Tf ) * this->v[2];
 
 	Kp1 = 2 * this->Kp * ( ( 2 * this->Tf ) + this->Ts ) * ( this->b * this->r[0] - this->y[0] );
-	Ki1 = KI * this->Ts * 2 * ( this->Tf + this->Ts ) * ( this->r[0] - this->y[0] );
+	Ki1 = KI * this->Ts * ( this->Ts + 2 * this->Tf ) * ( this->r[0] - this->y[0] );
 	Kd1 = 4 * this->Kd * ( this->c * this->r[0] - this->y[0] );
 
 	Kp2 = -8 * this->Kp * this->Tf * ( this->b * this->r[1] - this->y[1] );
-	Ki2 = 2 * KI * this-> Ts * this-> Ts * ( this->r[1] - this->y[1] );
+	Ki2 = 2 * KI * this->Ts * this->Ts * ( this->r[1] - this->y[1] );
 	Kd2 = -8 * this->Kd * ( this->c * this->r[1] - this->y[1] );
 
 	Kp3 = 2 * this->Kp * ( 2 * this->Tf - this->Ts ) * ( this->b * this->r[2] - this->y[2] );
-    Ki3 = KI * this->Ts * 2 * ( this->Ts - this->Tf ) * ( this->r[2] - this->y[2] );
+    Ki3 = KI * this->Ts * ( this->Ts - 2 * this->Tf ) * ( this->r[2] - this->y[2] );
 	Kd3 = 4 * this->Kd * ( this->c * this->r[2] - this->y[2] );
 
 	precalculation = Kp1+Kp2+Kp3+Ki1+Ki2+Ki3+Kd1+Kd2+Kd3+vk1+vk2;
-	this->v[0] = precalculation / (4 * this->Tf - 2 * this->Ts);
+	this->v[0] = precalculation / (4 * this->Tf + 2 * this->Ts);
 
 	// prev signal is updated
 	this->v[2] = this->v[1];
