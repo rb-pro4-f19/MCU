@@ -27,7 +27,7 @@
 /*****************************   Constants   *******************************/
 
 #define SYSTICK_DUR_US				500		// us
-#define DEFAULT_MOT_FREQ			80		// kHz
+#define DEFAULT_MOT_FREQ			8		// option
 #define GUI_UPDATE_DELAY			5	 	// ms
 
 #define CAL_PAN_SEEK_BOUNDARY_DUR	300		// ms
@@ -35,21 +35,24 @@
 #define CAL_PAN_SEEK_HAL_PWM		47
 #define CAL_TILT_SEEK_HAL_PWM		-40
 #define CAL_TILT_FINETUNE_PWM		25
-#define CAL_TILT_FINETUNE_DUR		100	// ms
+#define CAL_TILT_FINETUNE_DUR		100		// ms
 #define CAL_REDUNDANCY_NUM			4
 
 #define MOT0_BOUNDARY_MAX			540		// ticks
 #define MOT1_BOUNDARY_H				236		// ticks
 #define MOT1_BOUNDARY_L				-243	// ticks
 
-#define PID_TS						0.00003f
+#define PID_TS						0.01f
 #define PID_TF						1
 #define PID_B						1
 #define PID_C						0
 
-#define PID0_KP						2
-#define PID0_KI 					1
+// tilt
+#define PID0_KP						5
+#define PID0_KI 					2
 #define PID0_KD						0.4
+
+// pan
 #define PID1_KP						2
 #define PID1_KI 					1
 #define PID1_KD 					0.4
@@ -180,10 +183,10 @@ static void SYSTEM_init(void)
 	// init SAMPLER w/ UART module and max_samples size
 	sampler.init(uart_main, MAX_SAMPLES);
 
-	// init MOT0 w/ ENC0 to 10 kHz (tilt)
+	// init MOT0 w/ ENC0 (tilt)
 	mot0 = mot.new(MOT0, ENC0, DEFAULT_MOT_FREQ);
 
-	// init MOT1 w/ ENC0 to 10 kHz (pan)
+	// init MOT1 w/ ENC0 (pan)
 	mot1 = mot.new(MOT1, ENC1, DEFAULT_MOT_FREQ);
 
 	// set motor boundaries
@@ -238,7 +241,7 @@ static void SYSTEM_init(void)
 
 /********************************   FSM   **********************************/
 
-static void SYSTEM_operate(void)
+static inline void SYSTEM_operate(void)
 {
 	static float demoval;
 
@@ -271,10 +274,13 @@ static void SYSTEM_operate(void)
 
 		case SYS_TUNING:
 		{
+			// sample rate @ 100 Hz
+			// delay loop of 420 us
+			for (int i = 0; i < 650; i++);
 
 			// operate controllers
-			pid.operate_v2(pid0);
-			//pid.operate(pid1);
+			pid.operate(pid0);
+			pid.operate(pid1);
 
 			break;
 		}
@@ -457,7 +463,7 @@ static void SYSTEM_set_pwm(SPI_ADDR mot_addr, int8_t pwm)
 static void SYSTEM_set_freq(SPI_ADDR mot_addr, uint8_t freq_khz)
 {
 	mot.set_freq(mot_addr == MOT1 ? mot1 : mot0, freq_khz);
-	cli.msgf("FRQ of MOT%u was set to %d kHz.", mot_addr - 1, freq_khz);
+	cli.msgf("FRQ of MOT%u was set to %d.", mot_addr - 1, freq_khz);
 }
 
 static void SYSTEM_set_slew(TARGET_SLEW target_slew, bool option)

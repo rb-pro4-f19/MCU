@@ -97,10 +97,10 @@ void sys_time_period_init()
 	// Do a dummy read to insert a few cycles after enabling the peripheral.
 	dummy = SYSCTL_RCGC2_R;
 
-	// Set the direction as output (PF0)
+	// Set the direction as output (PF1)
 	GPIO_PORTF_DIR_R |= 0x02;
 
-	// Enable the GPIO pins for digital function (PF0).
+	// Enable the GPIO pins for digital function (PF1).
 	GPIO_PORTF_DEN_R |= 0x02;
 
 	// GPIO pins output
