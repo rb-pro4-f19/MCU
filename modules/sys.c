@@ -47,19 +47,19 @@
 #define PID_B						1
 #define PID_C						0
 
-// tilt
-#define PID0_KP						5
-#define PID0_KI 					2
-#define PID0_KD						0.4
+// tilt                          |14. may|  // current calc    //pan motor // 13. may
+#define PID0_KP						1.37//0.82//5
+#define PID0_KI 					0.28//0.11//2
+#define PID0_KD						0//0.4
 
-// pan
-#define PID1_KP						2
-#define PID1_KI 					1
-#define PID1_KD 					0.4
+// pan                              //current calc// test // prev calc // 13. may
+#define PID1_KP						0.658//0.8//0.16//2
+#define PID1_KI 					0.034//0.11//0.0045//1
+#define PID1_KD 					0//0.4
 
 #define SLEW_DX 					3
 
-#define MAX_SAMPLES                 2048
+#define MAX_SAMPLES                 300
 
 /*****************************   Variables   *******************************/
 
@@ -276,7 +276,7 @@ static inline void SYSTEM_operate(void)
 		{
 			// sample rate @ 100 Hz
 			// delay loop of 420 us
-			for (int i = 0; i < 650; i++);
+			for (int i = 0; i < 13343; i++);
 
 			// operate controllers
 			pid.operate(pid0);
