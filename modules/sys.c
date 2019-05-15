@@ -42,20 +42,29 @@
 #define MOT1_BOUNDARY_H				236		// ticks
 #define MOT1_BOUNDARY_L				-243	// ticks
 
-#define PID_TS						0.01f
-#define PID_TF						0
-#define PID_B						1
-#define PID_C						0
+#define PID0_TS						0.01f
+#define PID0_TF						0
+#define PID0_B						1
+#define PID0_C						0
+#define PID0_N                      0
+
+#define PID1_TS                      0.01f
+#define PID1_TF                      0
+#define PID1_B                       1
+#define PID1_C                       0
+#define PID1_N                       0
 
 // tilt
 #define PID0_KP						4
 #define PID0_KI 					1.5
 #define PID0_KD						0
+#define PID0_N                      0
 
 // pan                              //current calc// test // prev calc // 13. may
 #define PID1_KP						0.658//0.8//0.16//2
 #define PID1_KI 					0.034//0.11//0.0045//1
 #define PID1_KD 					0//0.4
+#define PID1_N                      0
 
 #define SLEW_DX 					3
 
@@ -204,20 +213,22 @@ static void SYSTEM_init(void)
 	hal1 = hal.new(HAL1);
 
 	// init PID0 (tilt)
-	pid0 = pid.new(mot0, PID0_KP, PID0_KI, PID0_KD, PID_TS);
+	pid0 = pid.new(mot0, PID0_KP, PID0_KI, PID0_KD, PID0_TS);
 	pid0->clamp = true;
-	pid0->Tf = PID_TF;
-	pid0->b = PID_B;
-	pid0->c = PID_C;
+	pid0->Tf = PID0_TF;
+	pid0->b = PID0_B;
+	pid0->c = PID0_C;
+	pid0->N = PID0_N;
 	pid0->sat_max = 127;
 	pid0->sat_min = -127;
 
 	// init PID1 (pan)
-	pid1 = pid.new(mot1, PID1_KP, PID1_KI, PID1_KD, PID_TS);
+	pid1 = pid.new(mot1, PID1_KP, PID1_KI, PID1_KD, PID1_TS);
 	pid1->clamp = true;
-	pid1->Tf = PID_TF;
-	pid1->b = PID_B;
-	pid1->c = PID_C;
+	pid1->Tf = PID1_TF;
+	pid1->b = PID1_B;
+	pid1->c = PID1_C;
+	pid1->N = PID1_N;
 	pid1->sat_max = 127;
 	pid1->sat_min = -127;
 
@@ -279,8 +290,8 @@ static inline void SYSTEM_operate(void)
 			for (int i = 0; i < 13343; i++);
 
 			// operate controllers
-			pid.operate(pid0);
-			pid.operate(pid1);
+			pid.operate_v3(pid0);
+			pid.operate_v3(pid1);
 
 			break;
 		}

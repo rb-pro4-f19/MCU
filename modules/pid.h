@@ -43,6 +43,7 @@ extern const struct PID_CLASS
 	void 			(* const del)(PID* this);
 	void            (* const operate)(PID* this);
 	void            (* const operate_v2)(PID* this);
+	void            (* const operate_v3)(PID* this);
 
 } pid;
 
@@ -68,6 +69,7 @@ struct PID
 	float Kd;
 	float Ts;
 	float Tf;
+	float N;
 
 	float r[3];
 	float e[2];

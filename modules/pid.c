@@ -34,6 +34,7 @@
 
 static void 		PID_operate(PID* this);
 static void 		PID_operate_v2(PID* this);
+static void         PID_operate_v3(PID* this);
 static PID*         PID_new(MOTOR* mot, float Kp, float Ki, float Kd, float Ts);
 static void 		PID_del(PID* this);
 
@@ -45,6 +46,7 @@ const struct PID_CLASS pid =
 	.del			= &PID_del,
 	.operate		= &PID_operate,
 	.operate_v2		= &PID_operate_v2,
+	.operate_v3     = &PID_operate_v3,
 };
 
 /***********************   Constructive Functions   ************************/
@@ -83,6 +85,7 @@ static PID* PID_new(MOTOR* mot, float Kp, float Ki, float Kd, float Ts)
 	this->b 		= 1.0f;
 	this->c 		= 0.0f;
 	this->Tf 		= 20.0f;
+	this->N         = 0;
 
 	this->clamp 	= false;
 	this->antiwindup= false;
@@ -206,9 +209,6 @@ static void PID_operate_v2(PID* this)
 	// prev reference is updated
 	this->r[2] = this->r[1];
 	this->r[1] = this->r[0];
-
-}
-
 
 }
 
