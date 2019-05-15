@@ -60,11 +60,11 @@
 
 // pan
 #define PID1_KP			            2.5
-#define PID1_KI 					0.7
-#define PID1_KD 				    0.1076
-#define PID1_N                      66.8719
-#define PID1_B                      0.997
-#define PID1_C                      0.0204
+#define PID1_KI 					1
+#define PID1_KD 				    0.1
+#define PID1_N                      40
+#define PID1_B                      0.95
+#define PID1_C                      0.1
 
 #define SLEW_DX 					3
 
