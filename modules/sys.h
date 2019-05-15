@@ -113,6 +113,8 @@ enum SYSTEM_VAR
 	SV_ADDR,
 	SV_PID0_U,
 	SV_PID0_Y,
+	SV_PID1_U,
+	SV_PID1_Y,
 };
 
 enum TARGET_SLEW

@@ -43,14 +43,14 @@
 #define MOT1_BOUNDARY_L				-243	// ticks
 
 #define PID_TS						0.01f
-#define PID_TF						1
+#define PID_TF						0
 #define PID_B						1
 #define PID_C						0
 
-// tilt                          |14. may|  // current calc    //pan motor // 13. may
-#define PID0_KP						1.37//0.82//5
-#define PID0_KI 					0.28//0.11//2
-#define PID0_KD						0//0.4
+// tilt
+#define PID0_KP						4
+#define PID0_KI 					1.5
+#define PID0_KD						0
 
 // pan                              //current calc// test // prev calc // 13. may
 #define PID1_KP						0.658//0.8//0.16//2
@@ -351,6 +351,18 @@ static void SYSTEM_sample(SYSTEM_VAR var, SAMPLE_TYPE type, const uint8_t* targe
 		case SV_PID0_Y:
 		{
 			target_var = &(pid0->y);
+			break;
+		}
+
+		case SV_PID1_U:
+		{
+			target_var = &(pid1->u);
+			break;
+		}
+
+		case SV_PID1_Y:
+		{
+			target_var = &(pid1->y);
 			break;
 		}
 
@@ -796,8 +808,8 @@ static void _SYSTEM_MODE_calibration(void)
 		{
 			// finish it up, Bob!
 
-			// for this to be an actual calibration the encoder values should be read
-			// and saved here.
+			// delay
+			for (int i = 0; i < 100000; i++);
 
 			// clear encoder buffer
 			mot.get_enc(mot0);
@@ -818,6 +830,9 @@ static void _SYSTEM_MODE_calibration(void)
 			sys.cal_done = true;
 			sys.cal_state = CAL_RESET;
 			sys.mode = SYS_IDLE;
+
+			// log information
+			cli.msg("Calibration done.");
 
 			return;
 		}
