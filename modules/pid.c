@@ -209,4 +209,77 @@ static void PID_operate_v2(PID* this)
 
 }
 
+
+}
+
+static void PID_operate_v3(PID* this)
+{
+	// currently is only a PID_operate_v2 regulator
+
+	static float Kp1, Kp2, Kp3;
+	static float Ki1, Ki2, Ki3;
+	static float Kd1, Kd2, Kd3;
+	static float vk1, vk2;
+	static float precalculation;
+
+	// calculate new error
+	mot.get_enc(this->mot);
+
+	// save prev positions
+	this->y[2] = this->y[1];
+	this->y[1] = this->y[0];
+	this->y[0] = this->mot->enc;
+
+
+	// Kp terms are calculated
+	vk1 = 8 * this->v[1];
+	vk2 = (2 * this->N * this->Ts - 4) * this->v[2];
+
+	Kp1 = this->Kp * ( 4 + 2 * this->N * this->Ts ) * ( this->b * this->r[0] - this->y[0] ) ;
+	Ki1 = KI * this->Ts * (2 * this->N * this->Ts + 2) * ( this->r[0] - this->y[0] );
+	Kd1 = 4 * this->Kd * this->N * ( this->c * this->r[0] - this->y[0] );
+
+	Kp2 = -8 * this->Kp * ( this->b * this->r[1] - this->y[1] );
+	Ki2 = 2 * KI * this->Ts * this->Ts * this->N * ( this->r[1] - this->y[1] );
+	Kd2 = -8 * this->Kd * this->N * ( this->c * this->r[1] - this->y[1] );
+
+	Kp3 = 2 * this->Kp * ( 2 - this->Ts * this->N ) * ( this->b * this->r[2] - this->y[2] );
+    Ki3 = KI * this->Ts * ( this->Ts * this->N - 2 ) * ( this->r[2] - this->y[2] );
+	Kd3 = 4 * this->Kd * this->N * ( this->c * this->r[2] - this->y[2] );
+
+	precalculation = Kp1+Kp2+Kp3+Ki1+Ki2+Ki3+Kd1+Kd2+Kd3+vk1+vk2;
+	this->v[0] = precalculation / (4 + 2 * this->N * this->Ts);
+
+	// prev signal is updated
+	this->v[2] = this->v[1];
+	this->v[1] = this->v[0];
+
+	// saturation limits & anti-windup
+	if ((this->v[0] > SAT_MAX) || (this->v[0] < SAT_MIN))
+	{
+		// bound output
+		this->u = (this->v[0] > SAT_MAX) ? SAT_MAX : SAT_MIN;
+
+		// anti-windup
+		this->Ki_en = (this->clamp) ? false : true;
+	}
+	else
+	{
+		this->u = this->v[0];
+		this->Ki_en = true;
+	}
+
+	// output control signal
+	// the PWM must be inverted
+	mot.set_pwm(this->mot, (int8_t)((-1)*(this->u)));
+
+	// prev reference is updated
+	this->r[2] = this->r[1];
+	this->r[1] = this->r[0];
+
+}
+
+/****************************** End Of Module ******************************/
+
+
 /****************************** End Of Module ******************************/
