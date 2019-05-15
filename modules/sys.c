@@ -44,27 +44,27 @@
 
 #define PID0_TS						0.01f
 #define PID0_TF						0
-#define PID0_B						1
-#define PID0_C						0
-#define PID0_N                      0
+
 
 #define PID1_TS                      0.01f
 #define PID1_TF                      0
-#define PID1_B                       1
-#define PID1_C                       0
-#define PID1_N                       0
 
-// tilt
-#define PID0_KP						4
-#define PID0_KI 					1.5
-#define PID0_KD						0
-#define PID0_N                      0
 
-// pan                              //current calc// test // prev calc // 13. may
-#define PID1_KP						0.658//0.8//0.16//2
-#define PID1_KI 					0.034//0.11//0.0045//1
-#define PID1_KD 					0//0.4
-#define PID1_N                      0
+// tilt                             // PID prev calc val //Nice// PI
+#define PID0_KP                     4.3464
+#define PID0_KI                     0.8655
+#define PID0_KD                     0.0737
+#define PID0_N                      76.798
+#define PID0_B                      1
+#define PID0_C                      0.0177
+
+// pan
+#define PID1_KP			            2.5
+#define PID1_KI 					0.7
+#define PID1_KD 				    0.1076
+#define PID1_N                      66.8719
+#define PID1_B                      0.997
+#define PID1_C                      0.0204
 
 #define SLEW_DX 					3
 

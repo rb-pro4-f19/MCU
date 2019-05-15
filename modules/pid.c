@@ -35,6 +35,7 @@
 static void 		PID_operate(PID* this);
 static void 		PID_operate_v2(PID* this);
 static void         PID_operate_v3(PID* this);
+static void         PID_operate_v4(PID* this);
 static PID*         PID_new(MOTOR* mot, float Kp, float Ki, float Kd, float Ts);
 static void 		PID_del(PID* this);
 
@@ -47,6 +48,8 @@ const struct PID_CLASS pid =
 	.operate		= &PID_operate,
 	.operate_v2		= &PID_operate_v2,
 	.operate_v3     = &PID_operate_v3,
+	.operate_v4     = &PID_operate_v4,
+
 };
 
 /***********************   Constructive Functions   ************************/
@@ -278,6 +281,31 @@ static void PID_operate_v3(PID* this)
 	this->r[1] = this->r[0];
 
 }
+
+static void PID_operate_v4(PID * this)
+{
+    // calculate new error
+    mot.get_enc(this->mot);
+
+    this->y[0] = this->mot->enc;
+
+    this->v[0] = (this->r[0]- this->y[0])* this->Kp;
+
+    if ((this->v[0] > SAT_MAX) || (this->v[0] < SAT_MIN))
+    {
+        // bound output
+        this->u = (this->v[0] > SAT_MAX) ? SAT_MAX : SAT_MIN;
+    }
+    else
+    {
+        this->u = this->v[0];
+    }
+    // output control signal
+    // the PWM must be inverted
+    mot.set_pwm(this->mot, (int8_t)((-1)*(this->u)));
+
+}
+
 
 /****************************** End Of Module ******************************/
 

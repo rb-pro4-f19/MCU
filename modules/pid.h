@@ -44,6 +44,7 @@ extern const struct PID_CLASS
 	void            (* const operate)(PID* this);
 	void            (* const operate_v2)(PID* this);
 	void            (* const operate_v3)(PID* this);
+	void            (* const operate_v4)(PID* this);
 
 } pid;
 
