@@ -26,33 +26,28 @@ The MCU has is comprised of various modules, each with a specific purpose.
 
 | Name       | File         | Description                                                      |
 |------------|--------------|------------------------------------------------------------------|
-| SYS/DRIVER | [`driver.h`] | MCU port access, interrupts, systick etc.                        |
-| FPGA       | `fpga.h`     | 32-bit FPGA control line.                                        |
-| EXCHDLR    | `exchdlr.h`  | Exception handling with `assert()` & `require()` methods.        |
+| DRIVER     | [`driver.h`] | MCU port access, interrupts, systick etc.                        |
+| SYSTEM     | [`sys.h`]    | System control, modes, get/set methods.                          |
+| ~~EXCHDLR~~| `exchdlr.h`  | Exception handling with `assert()` & `require()` methods.        |
 | TIMEPOINT  | [`tp.h`]     | Time tracking, duration calculation etc.                         |
 | CHECKSUM   | [`chksum.h`] | Static checksum method collection.                               |
 | UART       | [`uart.h`]   | UART communication with telegram protocol.                       |
 | SPI        | [`spi.h`]    | SPI communication with telegram protocol.                        |
 | CLI        | [`cli.h`]    | Command interpretation, console logging.                         |
-| CONTROLLER | `ctrl.h`     | Controller data struct with previous data, desired position etc. |
-| JOYSTICK   | `joystk.h`   | Joystick driver with kinematic mapping.                          |
-| MOTOR      | `dcmotor.h`  | DC Motor interface with encoder, PWM etc.                        |
-| PID        | `pid.h`      | PID computation class.                                           |
+| MOTOR      | [`mot.h`]    | Motor interface with encoder, PWM etc.                           |
+| PID        | [`pid.h`]    | PID computation class.                                           |
 
 <!-- Links to the header files -->
 
+[`sys.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/sys.h
 [`driver.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/driver.h
-[`fpga.h`]: #modules
-[`exchdlr.h`]: #modules
 [`tp.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/tp.h
 [`chksum.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/chksum.h
 [`uart.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/uart.h
 [`spi.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/spi.h
 [`cli.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/cli.h
-[`ctrl.h`]: #modules
-[`joystk.h`]: #modules
-[`dcmotor.h`]: #modules
-[`pid.h`]: #modules
+[`mot.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/mot.h
+[`pid.h`]: https://github.com/rb-pro4-f19/MCU/blob/master/modules/pid.h
 
 ## Modes
 Text.
