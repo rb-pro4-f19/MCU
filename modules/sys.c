@@ -365,6 +365,12 @@ static void SYSTEM_sample(SYSTEM_VAR var, SAMPLE_TYPE type, const uint8_t* targe
 			break;
 		}
 
+		case SV_PID0_R:
+		{
+			target_var = &(pid0->r[0]);
+			break;
+		}
+
 		case SV_PID1_U:
 		{
 			target_var = &(pid1->u);
@@ -374,6 +380,12 @@ static void SYSTEM_sample(SYSTEM_VAR var, SAMPLE_TYPE type, const uint8_t* targe
 		case SV_PID1_Y:
 		{
 			target_var = &(pid1->y);
+			break;
+		}
+
+		case SV_PID1_R:
+		{
+			target_var = &(pid1->r[0]);
 			break;
 		}
 
