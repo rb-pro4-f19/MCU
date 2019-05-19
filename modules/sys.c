@@ -24,6 +24,8 @@
 //#define abs(X,Y,Z) ( (X > Y) ? (X - Y) > Z : (Y - X) > Z )
 #define LAMBDA(c_) ({ c_ _; })
 
+static float ref_pid0, ref_pid1;
+
 /*****************************   Constants   *******************************/
 
 #define SYSTICK_DUR_US				500		// us
@@ -66,7 +68,7 @@
 #define PID1_B                      0.95
 #define PID1_C                      0.1
 
-#define SLEW_DX 					3
+#define SLEW_DY 					3
 
 #define MAX_SAMPLES                 300
 
@@ -106,7 +108,7 @@ static void 		SYSTEM_set_pid(SPI_ADDR mot_addr, PID_PARAM param, const uint8_t* 
 static void 		SYSTEM_get_enc(SPI_ADDR enc_addr);
 static void 		SYSTEM_get_hal(SPI_ADDR hal_addr);
 
-static inline void 	SYSTEM_slew_rate(int16_t * R_set, int16_t * R_cur);
+static void 	    SYSTEM_slew_rate(float * R_set, float * R_cur);
 
 static void 		_SYSTEM_to_gui(void);
 static void         _SYSTEM_to_gui_bg(void);
@@ -289,6 +291,14 @@ static inline void SYSTEM_operate(void)
 			// delay loop of 420 us
 			for (int i = 0; i < 13343; i++);
 
+			if ( sys.use_slew )
+			{
+
+				sys.slew_rate( &ref_pid0 , &(pid0->r[0]) );
+				sys.slew_rate( &ref_pid1 , &(pid1->r[0]) );
+
+			}
+
 			// operate controllers
 			pid.operate_v3(pid0);
 			pid.operate_v3(pid1);
@@ -461,14 +471,31 @@ static void SYSTEM_set_mode(SYS_MODE mode)
 
 static void SYSTEM_set_pos(SPI_ADDR mot_addr, const uint8_t* flt_array)
 {
-	PID* target_pid = (mot_addr == MOT1) ? pid1 : pid0;
 	static float theta_ang = 0.0f;
 
 	// construct float from float byte array
 	memcpy(&theta_ang, flt_array, sizeof(float));
 
-	// 1080 / 360 -> encoder ticks relationship
-	target_pid->r[0] = 3 * theta_ang;
+	if ( sys.use_slew )
+	{
+
+		if ( mot_addr == MOT1)
+		{
+		    ref_pid1 = 3* theta_ang;
+		}
+		else
+		{
+		    ref_pid0 = 3 * theta_ang;
+		}
+
+	}
+	else
+	{
+		PID* target_pid = (mot_addr == MOT1) ? pid1 : pid0;
+
+		// 1080 / 360 -> encoder ticks relationship
+		target_pid->r[0] = 3 * theta_ang;
+	}
 }
 
 static void SYSTEM_set_gui(bool option)
@@ -863,12 +890,12 @@ static void _SYSTEM_MODE_calibration(void)
 	};
 }
 
-static inline void 	SYSTEM_slew_rate(int16_t * R_set, int16_t * R_cur)
+static inline void 	SYSTEM_slew_rate(float * R_set, float * R_cur)
 {
 
 	if ( (*R_set) >= (*R_cur)  )
 	{
-		(*R_cur) += SLEW_DX;
+		(*R_cur) += SLEW_DY;
 
 		if ( (*R_cur) >= (*R_set) )
 		{
@@ -879,7 +906,7 @@ static inline void 	SYSTEM_slew_rate(int16_t * R_set, int16_t * R_cur)
 	else if ( (*R_set) <= (*R_cur)  )
 	{
 
-		(*R_cur) -= SLEW_DX;
+		(*R_cur) -= SLEW_DY;
 
 		if ( (*R_cur) <= (*R_set) )
 		{
